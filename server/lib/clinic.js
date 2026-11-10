@@ -22,6 +22,16 @@ export const DEMO_CLINIC = Object.freeze({
     "Cancellation: 24 hours' notice, or the full fee is charged.",
     "Insurance: we give an invoice to claim from your insurer; we don't bill insurers directly.",
   ]),
+  // The chat's first message. It says it's an AI, that this is a demo, and where messages go.
+  greeting: "Hi, I'm the AI assistant for Maple Lane Physio (Demo). I can answer questions about "
+    + 'our services, prices and opening hours, and help you book. This is a demo, so please use '
+    + "made-up details. Messages are sent to Google's Gemini AI, and Google may use them to "
+    + 'improve its products.',
+  tryAsking: Object.freeze([
+    'How much is a first assessment?',
+    'Are you open on Saturday?',
+    "Do I need a doctor's referral?",
+  ]),
 });
 
 // What the public page needs. A copy, so a caller can't change the demo facts.
@@ -32,5 +42,25 @@ export function publicClinic(clinic = DEMO_CLINIC) {
     services: clinic.services.map((service) => ({ ...service })),
     hours: [...clinic.hours],
     facts: [...clinic.facts],
+    greeting: clinic.greeting,
+    tryAsking: [...clinic.tryAsking],
   };
+}
+
+// The services a booking may name, plus "Not sure".
+export function serviceChoices(clinic = DEMO_CLINIC) {
+  return [...clinic.services.map((service) => service.name), 'Not sure'];
+}
+
+// The facts as plain lines for the AI. Part 5 adds the owner's own text here.
+export function clinicFactsText(clinic = DEMO_CLINIC) {
+  return [
+    `Clinic name: ${clinic.name}`,
+    clinic.tagline,
+    'Services and prices (US dollars):',
+    ...clinic.services.map((s) => `- ${s.name}: ${s.minutes} minutes, $${s.price}`),
+    'Opening hours:',
+    ...clinic.hours.map((line) => `- ${line}`),
+    ...clinic.facts,
+  ].join('\n');
 }

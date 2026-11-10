@@ -5,7 +5,7 @@ Portfolio demo for a made-up clinic, "Maple Lane Physio (Demo)". MERN with Googl
 Learning files (outside this repo): `../ai-front-desk-beginners-guide.md`, `../ai-front-desk-build-log.md`.
 
 ## Commands
-- Run the app: `npm run dev` (page on http://localhost:5173, API on 3000)
+- Run the app: `npm run dev` (page on http://localhost:5173, API on 3000; loads `.env` if present)
 - Every check: `npm test` then `npm run build`
 - Production start: `npm start`
 

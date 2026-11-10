@@ -1,9 +1,17 @@
 import { useEffect, useState } from 'react';
+import { Chat } from './Chat.jsx';
 
-// Part 1: the clinic page, filled from GET /api/clinic. The chat arrives in Part 2.
+// The clinic page, filled from GET /api/clinic, with the AI chat in the corner.
 export function App() {
   const [clinic, setClinic] = useState(null);
   const [failed, setFailed] = useState(false);
+  const [chatOpen, setChatOpen] = useState(false);
+  const [question, setQuestion] = useState('');
+
+  const ask = (text) => {
+    setQuestion(text);
+    setChatOpen(true);
+  };
 
   useEffect(() => {
     let active = true;
@@ -35,6 +43,16 @@ export function App() {
             <section className="hero">
               <h1>{clinic.name}</h1>
               <p className="lead">{clinic.tagline}</p>
+              <div className="try-asking">
+                <p className="quiet">Try asking our AI assistant:</p>
+                <ul>
+                  {clinic.tryAsking.map((text) => (
+                    <li key={text}>
+                      <button type="button" className="chip" onClick={() => ask(text)}>{text}</button>
+                    </li>
+                  ))}
+                </ul>
+              </div>
             </section>
 
             <section aria-labelledby="services-title">
@@ -71,6 +89,17 @@ export function App() {
       <footer className="site-footer">
         <div className="wrap">A demo app. The clinic, its people and its prices are invented.</div>
       </footer>
+
+      {clinic && (
+        <Chat
+          clinic={clinic}
+          open={chatOpen}
+          onOpen={() => setChatOpen(true)}
+          onClose={() => setChatOpen(false)}
+          question={question}
+          onQuestionUsed={() => setQuestion('')}
+        />
+      )}
     </>
   );
 }

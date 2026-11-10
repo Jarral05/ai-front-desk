@@ -4,19 +4,18 @@ import { fileURLToPath } from 'node:url';
 import express from 'express';
 import helmet from 'helmet';
 import { config } from './config.js';
+import { HttpError } from './errors.js';
+import { createGeminiAi } from './lib/ai.js';
 import { publicClinic } from './lib/clinic.js';
+import { chatRoutes } from './routes/chat.js';
+import { leadRoutes } from './routes/leads.js';
 
 const DIST = path.join(path.dirname(fileURLToPath(import.meta.url)), '..', 'dist');
 
-// An error with an HTTP status the browser may see. Anything else becomes a plain 500.
-export class HttpError extends Error {
-  constructor(status, message) {
-    super(message);
-    this.status = status;
-  }
-}
+export { HttpError };
 
-export function createApp() {
+// `ai` can be passed in (the tests use a fake one). Otherwise Gemini is used when a key is set.
+export function createApp({ ai = createGeminiAi({ apiKey: config.geminiApiKey, model: config.geminiModel }) } = {}) {
   const app = express();
   app.set('trust proxy', config.trustProxy);
   app.disable('x-powered-by');
@@ -56,6 +55,8 @@ export function createApp() {
 
   api.get('/health', (_req, res) => res.json({ ok: true }));
   api.get('/clinic', (_req, res) => res.json(publicClinic()));
+  api.use('/chat', chatRoutes({ ai }));
+  api.use('/leads', leadRoutes({ ai }));
 
   api.use(() => {
     throw new HttpError(404, 'Not found');
@@ -77,7 +78,9 @@ export function createApp() {
 
   // eslint-disable-next-line no-unused-vars
   app.use((err, _req, res, _next) => {
-    if (err instanceof HttpError) return res.status(err.status).json({ error: err.message });
+    if (err instanceof HttpError) {
+      return res.status(err.status).json({ error: err.message, ...(err.fields ? { fields: err.fields } : {}) });
+    }
     if (err.type === 'entity.too.large') return res.status(413).json({ error: 'That is too long.' });
     if (err.type === 'entity.parse.failed') return res.status(400).json({ error: 'Invalid request' });
     console.error(err);

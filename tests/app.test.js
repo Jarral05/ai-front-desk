@@ -89,5 +89,9 @@ test('production refuses to start without its database and address settings', ()
     () => checkProductionSettings({ NODE_ENV: 'production', MONGODB_URI: 'mongodb://x' }),
     /PUBLIC_URL must be set/,
   );
+  assert.throws(
+    () => checkProductionSettings({ NODE_ENV: 'production', MONGODB_URI: 'mongodb://x', PUBLIC_URL: 'https://x' }),
+    /GEMINI_API_KEY must be set/,
+  );
   assert.doesNotThrow(() => checkProductionSettings({ NODE_ENV: 'development' }));
 });
