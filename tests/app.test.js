@@ -1,10 +1,15 @@
 // Part 1 checks: the API answers, the clinic facts are right, and the safety headers are on.
-import { test } from 'node:test';
+import { after, before, test } from 'node:test';
 import assert from 'node:assert/strict';
 import request from 'supertest';
 import { createApp } from '../server/app.js';
 import { checkProductionSettings } from '../server/config.js';
-import { DEMO_CLINIC, publicClinic } from '../server/lib/clinic.js';
+import { AI_NOTICE, DEMO_CLINIC, publicClinic } from '../server/lib/clinic.js';
+import { startDatabase, stopDatabase } from './helpers.js';
+
+// Since Part 5 the clinic facts come from the database (the owner can edit them).
+before(startDatabase);
+after(stopDatabase);
 
 const app = createApp();
 
@@ -21,6 +26,9 @@ test('the clinic API returns the demo clinic and its four services', async () =>
   assert.equal(res.body.services.length, 4);
   assert.deepEqual(res.body.services[0], { name: 'First assessment', minutes: 60, price: 80 });
   assert.ok(res.body.hours.includes('Sunday: closed'));
+  // The greeting always ends with the AI and demo notice.
+  assert.ok(res.body.greeting.endsWith(AI_NOTICE));
+  assert.match(res.body.greeting, /AI assistant, not a person.*demo.*Gemini/);
 });
 
 test('the clinic name always says it is a demo', () => {
@@ -83,15 +91,24 @@ test('any page address gets the web page, which is never cached and stays out of
   assert.equal(res.headers['cache-control'], 'no-cache');
 });
 
-test('production refuses to start without its database and address settings', () => {
-  assert.throws(() => checkProductionSettings({ NODE_ENV: 'production' }), /MONGODB_URI must be set/);
+test('production refuses to start without its database, address, AI and owner settings', async () => {
+  const base = { NODE_ENV: 'production' };
+  assert.throws(() => checkProductionSettings(base), /MONGODB_URI must be set/);
+  Object.assign(base, { MONGODB_URI: 'mongodb://x' });
+  assert.throws(() => checkProductionSettings(base), /PUBLIC_URL must be set/);
+  Object.assign(base, { PUBLIC_URL: 'https://x' });
+  assert.throws(() => checkProductionSettings(base), /GEMINI_API_KEY must be set/);
+  Object.assign(base, { GEMINI_API_KEY: 'k' });
+  assert.throws(() => checkProductionSettings(base), /OWNER_EMAIL must be set/);
+  Object.assign(base, { OWNER_EMAIL: 'owner@example.com' });
+  assert.throws(() => checkProductionSettings(base), /OWNER_PASSWORD_HASH must be set/);
+  // A plain password (or a hash in another format) pasted by mistake is caught at startup.
   assert.throws(
-    () => checkProductionSettings({ NODE_ENV: 'production', MONGODB_URI: 'mongodb://x' }),
-    /PUBLIC_URL must be set/,
+    () => checkProductionSettings({ ...base, OWNER_PASSWORD_HASH: 'my-password' }),
+    /must be a hash made with "npm run hash-password"/,
   );
-  assert.throws(
-    () => checkProductionSettings({ NODE_ENV: 'production', MONGODB_URI: 'mongodb://x', PUBLIC_URL: 'https://x' }),
-    /GEMINI_API_KEY must be set/,
-  );
+  const { hashPassword } = await import('../server/lib/passwords.js');
+  const realHash = await hashPassword('x'.repeat(15));
+  assert.doesNotThrow(() => checkProductionSettings({ ...base, OWNER_PASSWORD_HASH: realHash }));
   assert.doesNotThrow(() => checkProductionSettings({ NODE_ENV: 'development' }));
 });

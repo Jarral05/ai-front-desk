@@ -1,5 +1,6 @@
-// The three things the app stores. Each deletes itself through a TTL index on `expiresAt`:
-// MongoDB checks about once a minute and removes documents whose time has passed.
+// What the app stores. Counters, chats, leads and owner sign-ins delete themselves through a TTL
+// index on `expiresAt`: MongoDB checks about once a minute and removes documents whose time has
+// passed. The owner's knowledge stays until the owner changes or resets it.
 import mongoose from 'mongoose';
 import { LIMITS } from './config.js';
 
@@ -58,3 +59,34 @@ const leadSchema = new Schema({
 leadSchema.index({ expiresAt: 1 }, { expireAfterSeconds: 0 });
 leadSchema.index({ createdAt: -1 });
 export const Lead = model('Lead', leadSchema);
+
+// The owner's sign-ins. The browser holds a random token; only its SHA-256 fingerprint is stored
+// here, so someone who could read the database still couldn't sign in with what they found.
+const ownerSessionSchema = new Schema({
+  _id: String, // SHA-256 of the token in the cookie
+  email: { type: String, required: true },
+  // Changes when the password does, so a new password signs out every older session.
+  passwordFingerprint: { type: String, required: true },
+  endsAt: { type: Date, required: true }, // the absolute end: 8 hours after signing in
+  expiresAt: { type: Date, required: true }, // the idle end: 30 minutes, moved on while in use
+}, { timestamps: true, versionKey: false });
+ownerSessionSchema.index({ expiresAt: 1 }, { expireAfterSeconds: 0 });
+export const OwnerSession = model('OwnerSession', ownerSessionSchema);
+
+// What the bot knows, as edited by the owner. One document, "clinic"; no document means the demo
+// facts. The PDF's text is kept, never the file itself.
+const knowledgeSchema = new Schema({
+  _id: String,
+  services: {
+    type: [new Schema({ name: String, minutes: Number, price: Number }, { _id: false })],
+    default: undefined,
+  },
+  hours: { type: [String], default: undefined },
+  facts: { type: [String], default: undefined },
+  greeting: String,
+  pdf: {
+    type: new Schema({ name: String, pages: Number, text: String, uploadedAt: Date }, { _id: false }),
+    default: null,
+  },
+}, { timestamps: true, versionKey: false });
+export const Knowledge = model('Knowledge', knowledgeSchema);

@@ -87,7 +87,9 @@ export function App() {
       </main>
 
       <footer className="site-footer">
-        <div className="wrap">A demo app. The clinic, its people and its prices are invented.</div>
+        <div className="wrap">
+          A demo app. The clinic, its people and its prices are invented. · <a href="/owner">Owner sign-in</a>
+        </div>
       </footer>
 
       {clinic && (

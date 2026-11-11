@@ -1,5 +1,11 @@
 // The made-up clinic's facts. Pure data: no database, no network.
-// From Part 5 the owner can edit these; this stays the "reset to demo facts" copy.
+// The owner can edit the services, hours, facts and welcome (lib/knowledge.js); this stays the
+// "reset to demo facts" copy. The name, tagline and "Try asking" questions aren't editable.
+
+// Always added after the owner's welcome, so an edit can never remove the AI and demo notice.
+export const AI_NOTICE = "I'm an AI assistant, not a person. This is a demo, so please use made-up "
+  + "details. Messages are sent to Google's Gemini AI, and Google may use them to improve its "
+  + 'products.';
 
 export const DEMO_CLINIC = Object.freeze({
   name: 'Maple Lane Physio (Demo)',
@@ -22,11 +28,9 @@ export const DEMO_CLINIC = Object.freeze({
     "Cancellation: 24 hours' notice, or the full fee is charged.",
     "Insurance: we give an invoice to claim from your insurer; we don't bill insurers directly.",
   ]),
-  // The chat's first message. It says it's an AI, that this is a demo, and where messages go.
-  greeting: "Hi, I'm the AI assistant for Maple Lane Physio (Demo). I can answer questions about "
-    + 'our services, prices and opening hours, and help you book. This is a demo, so please use '
-    + "made-up details. Messages are sent to Google's Gemini AI, and Google may use them to "
-    + 'improve its products.',
+  // The owner's part of the chat's first message. AI_NOTICE always follows it.
+  greeting: 'Hi, welcome to Maple Lane Physio (Demo). I can answer questions about our services, '
+    + 'prices and opening hours, and help you book.',
   tryAsking: Object.freeze([
     'How much is a first assessment?',
     'Are you open on Saturday?',
@@ -42,7 +46,7 @@ export function publicClinic(clinic = DEMO_CLINIC) {
     services: clinic.services.map((service) => ({ ...service })),
     hours: [...clinic.hours],
     facts: [...clinic.facts],
-    greeting: clinic.greeting,
+    greeting: `${clinic.greeting} ${AI_NOTICE}`,
     tryAsking: [...clinic.tryAsking],
   };
 }
@@ -52,7 +56,7 @@ export function serviceChoices(clinic = DEMO_CLINIC) {
   return [...clinic.services.map((service) => service.name), 'Not sure'];
 }
 
-// The facts as plain lines for the AI. Part 5 adds the owner's own text here.
+// The facts as plain lines for the AI. The PDF's text is sent separately (lib/prompts.js).
 export function clinicFactsText(clinic = DEMO_CLINIC) {
   return [
     `Clinic name: ${clinic.name}`,

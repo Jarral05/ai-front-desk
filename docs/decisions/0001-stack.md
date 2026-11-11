@@ -6,6 +6,7 @@ Date: 9 Nov 2026. Status: decided (owner, 6 Nov).
 
 Plain JavaScript (ES modules), Express 5 for the API, React 19 with Vite for the page, MongoDB
 Atlas with Mongoose, Node 24 in development and on GitHub (22.22 or later on the host).
+Changed 11 Nov: Node 24 or later everywhere, because the PDF reader `unpdf` needs it (decision 0005).
 
 ## Options considered
 

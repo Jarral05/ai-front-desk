@@ -7,15 +7,21 @@ import { config } from './config.js';
 import { HttpError } from './errors.js';
 import { createGeminiAi } from './lib/ai.js';
 import { publicClinic } from './lib/clinic.js';
+import { getClinic } from './lib/knowledge.js';
 import { chatRoutes } from './routes/chat.js';
 import { leadRoutes } from './routes/leads.js';
+import { ownerRoutes } from './routes/owner.js';
 
 const DIST = path.join(path.dirname(fileURLToPath(import.meta.url)), '..', 'dist');
 
 export { HttpError };
 
-// `ai` can be passed in (the tests use a fake one). Otherwise Gemini is used when a key is set.
-export function createApp({ ai = createGeminiAi({ apiKey: config.geminiApiKey, model: config.geminiModel }) } = {}) {
+// `ai` and `owner` can be passed in: the tests use a fake AI and a test owner. Otherwise Gemini is
+// used when a key is set, and the owner account comes from the settings.
+export function createApp({
+  ai = createGeminiAi({ apiKey: config.geminiApiKey, model: config.geminiModel }),
+  owner = config.owner,
+} = {}) {
   const app = express();
   app.set('trust proxy', config.trustProxy);
   app.disable('x-powered-by');
@@ -54,9 +60,11 @@ export function createApp({ ai = createGeminiAi({ apiKey: config.geminiApiKey, m
   api.use(express.json({ limit: '20kb' }));
 
   api.get('/health', (_req, res) => res.json({ ok: true }));
-  api.get('/clinic', (_req, res) => res.json(publicClinic()));
+  // The owner's facts if they've edited them, else the demo facts. Never the PDF's text.
+  api.get('/clinic', async (_req, res) => res.json(publicClinic(await getClinic())));
   api.use('/chat', chatRoutes({ ai }));
   api.use('/leads', leadRoutes({ ai }));
+  api.use('/owner', ownerRoutes({ owner, secure: config.isProd }));
 
   api.use(() => {
     throw new HttpError(404, 'Not found');

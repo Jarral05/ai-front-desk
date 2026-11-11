@@ -42,17 +42,20 @@ part of that day moves to the next day; nothing is skipped.
 
 ## Part 4: Owner login and dashboard
 
-- One owner account from settings (email plus a bcrypt hash), session cookie, rate-limited login.
-- Dashboard: leads newest first, score badges, filter, New/Contacted, this week's numbers, CSV with
-  formula-injection protection.
+- One owner account from settings (email plus a password hash), session cookie, rate-limited login.
+  Changed on 11 Nov: Node's built-in scrypt instead of bcrypt (decision 0005).
+- Dashboard: leads newest first, score badges, filter, New/Contacted, the last 7 days' numbers, CSV
+  with formula-injection protection.
 - **Done when:** signed out, every owner route refuses; signed in, the dashboard works on a phone.
+  **Done 11 Nov** (tests, and the browser check on a 390 px phone screen).
 
 ## Part 5: The owner's knowledge
 
 - Edit facts and greeting; upload one PDF (2 MB, 20 pages, real type checked, text kept, not the
   file); 20,000-character cap on everything the bot knows; reset to demo facts.
 - **Done when:** after uploading the test PDF (Pilates class, 50 minutes, $25), the chat answers
-  "How much is Pilates?" correctly.
+  "How much is Pilates?" correctly. **Done 11 Nov:** "Pilates class is 50 minutes and costs $25,
+  and prices include tax." (real Gemini, local).
 
 ## Part 6: Email, Google Sheet and buyer demo view
 

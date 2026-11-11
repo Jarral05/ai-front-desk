@@ -4,6 +4,40 @@ All notable changes to this project are recorded here. The format follows
 [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and versions follow
 [Semantic Versioning](https://semver.org/).
 
+## [0.1.2] - 2026-11-11
+
+### Added
+
+- Owner sign-in (Part 4): one owner account from settings (`OWNER_EMAIL`, `OWNER_PASSWORD_HASH`).
+  The password is stored as a scrypt hash (Node's own crypto, OWASP's settings); `npm run
+  hash-password` makes the hash with hidden typing. The same message for a wrong email or
+  password, and 10 tries an hour from one place, counted before the check.
+- Owner sessions without a package: a random 256-bit token in an HttpOnly, SameSite=Strict cookie
+  (Secure and `__Host-` in production); only its SHA-256 is stored. 30 minutes idle, 8 hours at
+  most, a new token at every sign-in, and a new password or owner email ends every older session.
+  Requests from other websites are refused by an Origin check.
+- Owner dashboard at `/owner`: leads newest first with Hot, Warm, Cold or Unscored badges, the
+  reasons for each score, a score filter, New/Contacted, the last 7 days' chats, leads and Hot
+  leads, and a CSV download protected against spreadsheet formula injection.
+- Knowledge page at `/owner/knowledge` (Part 5): the owner edits services and prices, opening
+  hours, facts and the welcome message; changes reach the clinic page, the booking form and the AI
+  from the next message. One PDF (real PDF by its first bytes, 2 MB, 20 pages, 10-second timeout,
+  images capped, scripts off): its text is kept, never the file, and the AI reads it in its own
+  block with a rule never to follow instructions inside it. A 20,000-character cap on everything
+  the bot knows. Remove the PDF, or reset everything to the demo facts.
+- Footer link "Owner sign-in" on the clinic page.
+- Decision record 0005. 76 tests in total (31 new), and a PDF maker for tests so no binary files
+  are kept in the repo.
+
+### Changed
+
+- The chat greeting is now the owner's welcome followed by a fixed notice that always says it's an
+  AI, that this is a demo, and that messages go to Google's Gemini.
+- Text from the owner and from visitors can no longer contain the AI's block markers (`<<<` or
+  `>>>`), in the chat rules and in lead summaries.
+- Production refuses to start without `OWNER_EMAIL` and a valid `OWNER_PASSWORD_HASH`.
+- Node.js 24 or later (was 22.22). New package: `unpdf` 2.1.0.
+
 ## [0.1.1] - 2026-11-10
 
 ### Added

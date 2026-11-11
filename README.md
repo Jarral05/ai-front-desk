@@ -7,8 +7,9 @@ that answers only from the clinic's facts, then books through a short form. Each
 lead with a short AI summary and a Hot, Warm or Cold score, and the owner sees it on a private
 dashboard.
 
-**Status:** in progress (Parts 1 to 3 of 9: the clinic page, the AI chat and scored leads). The clinic, its people and its prices are invented. No real
-data is used anywhere.
+**Status:** in progress (Parts 1 to 5 of 9: the clinic page, the AI chat, scored leads, the owner's
+dashboard and the owner's knowledge with a PDF). The clinic, its people and its prices are invented.
+No real data is used anywhere.
 
 Built with MongoDB, Express, React and Node.js, with Google Gemini for the AI. What it does:
 [docs/SPEC.md](docs/SPEC.md). How it's built, part by part: [docs/PLAN.md](docs/PLAN.md). Why:
@@ -16,7 +17,7 @@ Built with MongoDB, Express, React and Node.js, with Google Gemini for the AI. W
 
 ## Run it on your computer
 
-Needs Node.js 22.22 or later.
+Needs Node.js 24 or later.
 
 ```bash
 npm install
@@ -27,6 +28,9 @@ Open http://localhost:5173. Without settings, the app uses a temporary in-memory
 nothing needs to be set up. To try the AI chat, copy `.env.example` to `.env` and add your own
 Gemini key from Google AI Studio; `npm run dev` loads it. Without a key the page still works, the
 chat says it's switched off, and bookings are saved unscored.
+
+To try the owner's dashboard, run `npm run hash-password`, put the printed line and your email in
+`.env` as `OWNER_PASSWORD_HASH` and `OWNER_EMAIL`, restart, and open http://localhost:5173/owner.
 
 ## Checks
 

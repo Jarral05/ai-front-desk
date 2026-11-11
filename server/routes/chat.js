@@ -5,7 +5,9 @@ import { z } from 'zod';
 import { LIMITS } from '../config.js';
 import { Conversation } from '../models.js';
 import { AiError } from '../lib/ai.js';
-import { allowVisitorMessage, reserveAiCall, visitorId } from '../lib/counters.js';
+import { clinicFactsText } from '../lib/clinic.js';
+import { allowVisitorMessage, countStat, reserveAiCall, visitorId } from '../lib/counters.js';
+import { getClinic } from '../lib/knowledge.js';
 import { chatRules, NOT_SURE } from '../lib/prompts.js';
 import { EMERGENCY_REPLY, looksLikeEmergency } from '../lib/safety.js';
 import { HttpError } from '../errors.js';
@@ -43,10 +45,12 @@ export function chatRoutes({ ai }) {
     const visitor = visitorId(req.ip);
 
     const conversation = await findOrStart(parsed.data.conversationId, visitor);
+    const isNewChat = conversation.isNew;
     const save = async (reply) => {
       conversation.messages.push({ role: 'visitor', text: message }, { role: 'assistant', text: reply });
       conversation.visitorMessages += 1;
       await conversation.save();
+      if (isNewChat) await countStat('chats');
       res.json({
         conversationId: conversation._id,
         reply,
@@ -69,9 +73,11 @@ export function chatRoutes({ ai }) {
     if (slot === 'day') throw new HttpError(503, "The demo assistant has answered all it can for today. Please try again tomorrow, or use the booking form.");
     if (slot === 'minute') throw new HttpError(503, 'The assistant is busy. Please try again in a minute.');
 
+    // Read now, not at startup: an edit on the Knowledge page counts from the very next message.
+    const clinic = await getClinic();
     try {
       const text = await ai.generate({
-        system: chatRules(),
+        system: chatRules(clinicFactsText(clinic), clinic.pdf?.text ?? ''),
         messages: [...conversation.messages.slice(-2 * LIMITS.messagesPerConversation), { role: 'visitor', text: message }],
       });
       return save(cleanReply(text));

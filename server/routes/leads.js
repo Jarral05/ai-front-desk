@@ -4,19 +4,21 @@
 import express from 'express';
 import { z } from 'zod';
 import { Conversation, Lead, TIMINGS } from '../models.js';
-import { allowVisitorLead, reserveAiCall, visitorId } from '../lib/counters.js';
+import { allowVisitorLead, countStat, reserveAiCall, visitorId } from '../lib/counters.js';
 import { serviceChoices } from '../lib/clinic.js';
+import { getClinic } from '../lib/knowledge.js';
 import { leadData, LEAD_JSON_SCHEMA, leadRules } from '../lib/prompts.js';
 import { scoreLead } from '../lib/score.js';
 import { HttpError } from '../errors.js';
 
-const LeadInput = z.object({
+// Built for each request, because the services a visitor may choose are the owner's current ones.
+const leadInput = (services) => z.object({
   name: z.string().trim().min(2, 'Please enter your name.').max(80, 'Please keep your name under 80 characters.'),
   email: z.email('Please enter a valid email address.').max(120, 'That email address is too long.'),
   phone: z.string().trim().max(30, 'That phone number is too long.')
     .regex(/^[0-9+()\-\s]*$/, 'A phone number can only use digits, spaces and + ( ) -.')
     .optional().default(''),
-  service: z.string().refine((value) => serviceChoices().includes(value), 'Please choose a service.'),
+  service: z.string().refine((value) => services.includes(value), 'Please choose a service.'),
   timing: z.enum(TIMINGS, 'Please choose when you would like to come.'),
   message: z.string().trim().max(500, 'Please keep your message under 500 characters.').optional().default(''),
   conversationId: z.uuid().optional(),
@@ -59,7 +61,7 @@ export function leadRoutes({ ai }) {
   const router = express.Router();
 
   router.post('/', async (req, res) => {
-    const parsed = LeadInput.safeParse(req.body ?? {});
+    const parsed = leadInput(serviceChoices(await getClinic())).safeParse(req.body ?? {});
     if (!parsed.success) {
       const fields = {};
       for (const issue of parsed.error.issues) {
@@ -93,6 +95,7 @@ export function leadRoutes({ ai }) {
       conversationId: conversation?._id ?? null,
       visitor,
     });
+    await countStat('leads');
 
     const result = await summarise(ai, lead, conversation?.messages ?? []);
     if (result) {
@@ -101,6 +104,7 @@ export function leadRoutes({ ai }) {
         { _id: lead._id },
         { summary: result.summary, intent: result.intent, score, scoreReasons: reasons },
       );
+      if (score === 'Hot') await countStat('hot');
     }
 
     // The visitor gets a thank-you, not their score: that's for the owner.

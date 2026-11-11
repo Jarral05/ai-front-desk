@@ -43,6 +43,24 @@ export async function allowVisitorLead(visitor) {
   return count <= LIMITS.leadsPerVisitorHour;
 }
 
+// Numbers for the owner's dashboard: one counter per kind ('chats', 'leads', 'hot') per day, kept
+// for 8 days. Leads delete themselves after 24 hours, so "the last 7 days" can't be counted from
+// leads; these counters hold no personal details, so they can safely last longer.
+export async function countStat(kind) {
+  try {
+    await bump(`stat-${kind}:${windows.day()}`, 8 * 24 * 60 * 60);
+  } catch (error) {
+    // A missed count must never cost a visitor their chat or lead.
+    console.error('Could not count a stat:', kind, error?.name ?? 'Error');
+  }
+}
+
+export async function statLastDays(kind, days, now = new Date()) {
+  const keys = Array.from({ length: days }, (_, i) => `stat-${kind}:${windows.day(new Date(now - i * 86400000))}`);
+  const found = await Counter.find({ _id: { $in: keys } }).lean();
+  return found.reduce((sum, doc) => sum + doc.count, 0);
+}
+
 // Reserves one AI call for the whole app. Returns 'ok', 'minute' or 'day'.
 // The day is checked first: once it's used up, the minute counter isn't touched.
 export async function reserveAiCall() {

@@ -4,6 +4,7 @@ import request from 'supertest';
 import { MongoMemoryServer } from 'mongodb-memory-server-core';
 import { connectDatabase } from '../server/db.js';
 import { Counter } from '../server/models.js';
+import { hashPassword } from '../server/lib/passwords.js';
 
 let memory;
 
@@ -52,12 +53,38 @@ export function fakeAi(reply = 'We are open on Saturday from 9am to 1pm.') {
 }
 
 // Each visitor gets their own IP (the app trusts one proxy), so limits don't leak between tests.
+// `cookie` is sent with every request, as a browser would.
 let visitorNumber = 0;
-export function newVisitor(app) {
+export function newVisitor(app, cookie = '') {
   visitorNumber += 1;
-  const ip = `203.0.113.${visitorNumber}`;
+  // Documentation-only addresses: IPv4 for the first 254 visitors, then IPv6.
+  const ip = visitorNumber < 255 ? `203.0.113.${visitorNumber}` : `2001:db8::${visitorNumber.toString(16)}`;
+  const send = (method) => (url) => {
+    const req = request(app)[method](url).set('X-Forwarded-For', ip);
+    return cookie ? req.set('Cookie', cookie) : req;
+  };
   return {
     ip,
-    post: (url) => request(app).post(url).set('X-Forwarded-For', ip),
+    get: send('get'),
+    post: send('post'),
+    put: send('put'),
+    patch: send('patch'),
+    delete: send('delete'),
   };
+}
+
+// The test owner. The hash is made once per test file: scrypt is slow on purpose.
+export const OWNER = Object.freeze({ email: 'owner@example.com', password: 'a long test passphrase for the owner' });
+let ownerHash;
+export async function testOwner() {
+  ownerHash ??= await hashPassword(OWNER.password);
+  return { email: OWNER.email, passwordHash: ownerHash };
+}
+
+// Signs in and returns "name=value" for the Cookie header, plus a visitor that sends it.
+export async function signIn(app) {
+  const res = await newVisitor(app).post('/api/owner/login').send({ email: OWNER.email, password: OWNER.password });
+  if (res.status !== 200) throw new Error(`Sign-in failed: ${res.status} ${JSON.stringify(res.body)}`);
+  const cookie = res.headers['set-cookie'][0].split(';')[0];
+  return { cookie, owner: newVisitor(app, cookie), res };
 }
