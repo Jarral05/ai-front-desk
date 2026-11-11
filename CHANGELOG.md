@@ -4,6 +4,23 @@ All notable changes to this project are recorded here. The format follows
 [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and versions follow
 [Semantic Versioning](https://semver.org/).
 
+## [0.1.3] - 2026-11-11
+
+### Added
+
+- Owner sign-in: a Show/Hide button on the password box, the same as the client portal's (an eye
+  drawn in code, no icon package). It tells screen readers "Show password" or "Hide password" and
+  whether it's on.
+
+### Changed
+
+- Owner sign-in: an empty box gets "Enter your email address and password." before anything is
+  sent, in the same words on every browser (the form no longer shows the browser's own bubbles).
+  Typing again clears the message. Phones no longer capitalise or correct the email or a visible
+  password.
+- Each sign-in label is joined to its box by ID, so screen readers call the boxes "Email address"
+  and "Password", not "Password Show password".
+
 ## [0.1.2] - 2026-11-11
 
 ### Added

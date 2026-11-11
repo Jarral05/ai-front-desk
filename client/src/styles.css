@@ -220,6 +220,29 @@ button:focus-visible, input:focus-visible, select:focus-visible, textarea:focus-
 .owner-main section, .owner-main form.owner-card { margin-bottom: 16px; }
 .owner-card { background: #fff; border: 1px solid var(--line); border-radius: 12px; padding: 16px; }
 .owner-login { max-width: 420px; margin: 1rem auto; }
+.owner-login > .quiet { margin: 0.25rem 0 1rem; }
+.field { display: grid; gap: 4px; }
+.field label { font-size: 0.9rem; font-weight: 500; }
+/* Show/Hide sits inside the password box, on the right (as in the client portal). */
+.password-box { position: relative; }
+.owner-main .password-box input { padding-right: 86px; }
+.password-toggle {
+  position: absolute;
+  top: 50%;
+  right: 6px;
+  transform: translateY(-50%);
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  padding: 5px 9px;
+  border: 0;
+  border-radius: 6px;
+  background: transparent;
+  color: var(--quiet);
+  font: 500 0.82rem var(--font-body);
+  cursor: pointer;
+}
+.password-toggle:hover { background: #f0fdfa; color: var(--teal); }
 .owner-title { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 12px; margin-bottom: 1rem; }
 a.button { display: inline-block; text-decoration: none; }
 .button-danger { background: #b91c1c; }

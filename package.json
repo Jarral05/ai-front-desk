@@ -1,6 +1,6 @@
 {
   "name": "ai-front-desk",
-  "version": "0.1.2",
+  "version": "0.1.3",
   "private": true,
   "description": "A demo AI front desk for a made-up clinic: an AI chat that answers from the clinic's facts and turns enquiries into scored leads.",
   "type": "module",
