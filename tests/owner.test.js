@@ -247,7 +247,7 @@ test('the dashboard lists leads newest first, filters by score, and never shows 
   const all = (await owner.get('/api/owner/leads')).body.leads;
   assert.deepEqual(all.map((lead) => lead.name), ['Third', 'Second', 'First']);
   assert.deepEqual(Object.keys(all[1]).sort(), [
-    'email', 'id', 'message', 'name', 'phone', 'receivedAt', 'score', 'scoreReasons', 'service', 'status', 'summary', 'timing',
+    'email', 'id', 'message', 'name', 'phone', 'receivedAt', 'sample', 'score', 'scoreReasons', 'service', 'status', 'summary', 'timing',
   ]);
   assert.deepEqual(all[1].scoreReasons, ['Wants a time this week (+2)']);
 
@@ -296,6 +296,7 @@ test("the last 7 days' numbers count new chats, leads and Hot leads", async () =
   assert.equal(end.chats - start.chats, 1);
   assert.equal(end.leads - start.leads, 2);
   assert.equal(end.hot - start.hot, 1);
+  assert.deepEqual(end.samples, { leads: 0, hot: 0 });
 });
 
 test('the 7-day numbers add up the last 7 daily counters, which keep no personal details and last 8 days', async () => {

@@ -1,4 +1,6 @@
 // The made-up clinic's facts. Pure data: no database, no network.
+import { initials } from './brand.js';
+import { CLINIC_SAMPLES } from './samples.js';
 // The owner can edit the services, hours, facts and welcome (lib/knowledge.js); this stays the
 // "reset to demo facts" copy. The name, tagline and "Try asking" questions aren't editable.
 
@@ -8,6 +10,33 @@ export const AI_NOTICE = "I'm an AI assistant, not a person. This is a demo, so 
   + 'products.';
 
 export const DEMO_CLINIC = Object.freeze({
+  // The profile parts (lib/profiles.js): the words and settings that differ from one kind of
+  // business to another. The owner can't edit these.
+  id: 'maple-lane',
+  knowledgeId: 'clinic',
+  kind: 'physiotherapy clinic',
+  place: 'clinic',
+  about: 'The clinic is made up for a demo.',
+  currency: Object.freeze({ symbol: '$', name: 'US dollars' }),
+  servicesTitle: 'Services',
+  // Which contact detail the booking form insists on: 'email' or 'phone'.
+  contact: 'email',
+  demoNote: "Demo website for a made-up clinic. Please don't enter real personal details.",
+  footerNote: 'A demo app. The clinic, its people and its prices are invented.',
+  adviceInstead: 'suggest booking a first assessment',
+  emergencyRule: 'tell them to contact emergency services now',
+  emergencyReply: null, // null means the standard reply in lib/safety.js
+  emergencyPatterns: Object.freeze([]),
+  languageRule: null,
+  // The page's colours (lib/brand.js checks they can be read) and an optional logo file.
+  brand: Object.freeze({ dark: '#0f1e33', accent: '#0f766e', light: '#5eead4' }),
+  logo: null,
+  sampleLeads: CLINIC_SAMPLES,
+  notSureText: null, // null means the standard English sentence in lib/prompts.js
+  // Questions that get a fixed refusal without the AI (a hospital's medicine questions).
+  advicePatterns: Object.freeze([]),
+  adviceReply: null,
+
   name: 'Maple Lane Physio (Demo)',
   tagline: 'Physiotherapy for adults and teenagers in Sampletown.',
   services: Object.freeze([
@@ -48,6 +77,16 @@ export function publicClinic(clinic = DEMO_CLINIC) {
     facts: [...clinic.facts],
     greeting: `${clinic.greeting} ${AI_NOTICE}`,
     tryAsking: [...clinic.tryAsking],
+    place: clinic.place,
+    currency: clinic.currency.symbol,
+    servicesTitle: clinic.servicesTitle,
+    contact: clinic.contact,
+    demoNote: clinic.demoNote,
+    footerNote: clinic.footerNote,
+    brand: { ...clinic.brand },
+    initials: initials(clinic.name),
+    // Only whether there is a logo: the picture itself comes from GET /api/logo.
+    logo: Boolean(clinic.logo),
   };
 }
 
@@ -58,11 +97,13 @@ export function serviceChoices(clinic = DEMO_CLINIC) {
 
 // The facts as plain lines for the AI. The PDF's text is sent separately (lib/prompts.js).
 export function clinicFactsText(clinic = DEMO_CLINIC) {
+  const { symbol, name: currencyName } = clinic.currency;
+  const place = clinic.place[0].toUpperCase() + clinic.place.slice(1);
   return [
-    `Clinic name: ${clinic.name}`,
+    `${place} name: ${clinic.name}`,
     clinic.tagline,
-    'Services and prices (US dollars):',
-    ...clinic.services.map((s) => `- ${s.name}: ${s.minutes} minutes, $${s.price}`),
+    `Services and prices (${currencyName}):`,
+    ...clinic.services.map((s) => `- ${s.name}: ${s.minutes} minutes, ${symbol}${s.price}`),
     'Opening hours:',
     ...clinic.hours.map((line) => `- ${line}`),
     ...clinic.facts,

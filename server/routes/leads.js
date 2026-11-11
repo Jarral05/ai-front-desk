@@ -11,13 +11,23 @@ import { leadData, LEAD_JSON_SCHEMA, leadRules } from '../lib/prompts.js';
 import { scoreLead } from '../lib/score.js';
 import { HttpError } from '../errors.js';
 
+// `missing` is what the visitor reads when the box was left out altogether.
+const phone = (missing) => z.string(missing).trim().max(30, 'That phone number is too long.')
+  .regex(/^[0-9+()\-\s]*$/, 'A phone number can only use digits, spaces and + ( ) -.');
+
 // Built for each request, because the services a visitor may choose are the owner's current ones.
-const leadInput = (services) => z.object({
+// `contact` comes from the profile: a clinic abroad asks for an email, a hospital in Pakistan for
+// a phone number. The other one stays optional.
+const leadInput = (services, contact = 'email') => z.object({
   name: z.string().trim().min(2, 'Please enter your name.').max(80, 'Please keep your name under 80 characters.'),
-  email: z.email('Please enter a valid email address.').max(120, 'That email address is too long.'),
-  phone: z.string().trim().max(30, 'That phone number is too long.')
-    .regex(/^[0-9+()\-\s]*$/, 'A phone number can only use digits, spaces and + ( ) -.')
-    .optional().default(''),
+  email: contact === 'email'
+    ? z.email('Please enter a valid email address.').max(120, 'That email address is too long.')
+    : z.union([z.literal(''), z.email('Please enter a valid email address.').max(120, 'That email address is too long.')])
+      .optional().default(''),
+  phone: contact === 'phone'
+    ? phone('Please enter your phone number.')
+      .refine((value) => value.replace(/\D/g, '').length >= 7, 'Please enter your phone number.')
+    : phone().optional().default(''),
   service: z.string().refine((value) => services.includes(value), 'Please choose a service.'),
   timing: z.enum(TIMINGS, 'Please choose when you would like to come.'),
   message: z.string().trim().max(500, 'Please keep your message under 500 characters.').optional().default(''),
@@ -38,12 +48,12 @@ export function twoSentences(text) {
   return sentences.slice(0, 2).join('').trim().slice(0, 400);
 }
 
-export async function summarise(ai, lead, messages) {
+export async function summarise(ai, lead, messages, clinic) {
   if (!ai) return null;
   if ((await reserveAiCall()) !== 'ok') return null;
   try {
     const raw = await ai.generate({
-      system: leadRules(),
+      system: leadRules(clinic),
       messages: [{ role: 'visitor', text: leadData(lead, messages) }],
       json: LEAD_JSON_SCHEMA,
       maxOutputTokens: 300,
@@ -61,7 +71,8 @@ export function leadRoutes({ ai }) {
   const router = express.Router();
 
   router.post('/', async (req, res) => {
-    const parsed = leadInput(serviceChoices(await getClinic())).safeParse(req.body ?? {});
+    const clinic = await getClinic();
+    const parsed = leadInput(serviceChoices(clinic), clinic.contact).safeParse(req.body ?? {});
     if (!parsed.success) {
       const fields = {};
       for (const issue of parsed.error.issues) {
@@ -97,7 +108,7 @@ export function leadRoutes({ ai }) {
     });
     await countStat('leads');
 
-    const result = await summarise(ai, lead, conversation?.messages ?? []);
+    const result = await summarise(ai, lead, conversation?.messages ?? [], clinic);
     if (result) {
       const { score, reasons } = scoreLead({ timing: lead.timing, service: lead.service, intent: result.intent });
       await Lead.updateOne(

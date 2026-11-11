@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react';
 import { getJson, postJson } from './api.js';
+import { applyBrand, Logo } from './brand.jsx';
 import { Knowledge } from './Knowledge.jsx';
 import { Leads } from './Leads.jsx';
 import { OwnerLogin } from './OwnerLogin.jsx';
@@ -13,9 +14,17 @@ export default function Owner() {
   const [email, setEmail] = useState(null);
   const [checked, setChecked] = useState(false);
   const [page, setPage] = useState(pageFromAddress);
+  // The name and the word "clinic" or "hospital" come from the profile this copy is showing.
+  const [clinic, setClinic] = useState({ name: 'Maple Lane Physio (Demo)', place: 'clinic' });
 
   useEffect(() => {
     document.title = 'Owner dashboard · Maple Lane Physio (Demo)';
+    getJson('/api/clinic').then((result) => {
+      if (!result.ok) return;
+      setClinic(result.data);
+      applyBrand(result.data.brand);
+      document.title = `Owner dashboard · ${result.data.name}`;
+    });
     getJson('/api/owner/session').then((result) => {
       setEmail(result.ok && result.data.signedIn ? result.data.email : null);
       setChecked(true);
@@ -42,11 +51,11 @@ export default function Owner() {
   return (
     <>
       <div className="demo-bar" role="note">
-        Owner dashboard of a demo clinic. Leads here are made up and delete themselves after 24 hours.
+        Owner dashboard of a demo {clinic.place}. Leads here are made up and delete themselves after 24 hours.
       </div>
       <header className="site-header">
         <div className="wrap owner-head">
-          <span className="logo">Maple Lane Physio (Demo) · Owner</span>
+          <span className="logo"><Logo clinic={clinic} />{clinic.name} · Owner</span>
           {email && (
             <nav className="owner-nav" aria-label="Owner pages">
               <a href="/owner" aria-current={page === 'leads' ? 'page' : undefined} onClick={go('leads')}>Leads</a>
@@ -65,7 +74,7 @@ export default function Owner() {
       </main>
 
       <footer className="site-footer">
-        <div className="wrap"><a href="/">Back to the clinic page</a></div>
+        <div className="wrap"><a href="/">Back to the {clinic.place} page</a></div>
       </footer>
     </>
   );

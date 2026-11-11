@@ -42,7 +42,8 @@ export const TIMINGS = ['This week', 'In the next two weeks', 'Later', 'Not sure
 
 const leadSchema = new Schema({
   name: { type: String, required: true, maxlength: 80 },
-  email: { type: String, required: true, maxlength: 120 },
+  // Empty when the profile asks for a phone number instead (lib/profiles.js).
+  email: { type: String, default: '', maxlength: 120 },
   phone: { type: String, default: '', maxlength: 30 },
   service: { type: String, required: true, maxlength: 80 },
   timing: { type: String, enum: TIMINGS, required: true },
@@ -54,6 +55,8 @@ const leadSchema = new Schema({
   score: { type: String, enum: SCORES, default: 'Unscored' },
   scoreReasons: { type: [String], default: [] },
   status: { type: String, enum: ['New', 'Contacted'], default: 'New' },
+  // Made up for showing the dashboard (lib/samples.js); shown with a "Sample" label.
+  sample: { type: Boolean, default: false },
   expiresAt: { type: Date, default: () => expiresInHours() },
 }, { timestamps: true, versionKey: false });
 leadSchema.index({ expiresAt: 1 }, { expireAfterSeconds: 0 });
@@ -73,8 +76,8 @@ const ownerSessionSchema = new Schema({
 ownerSessionSchema.index({ expiresAt: 1 }, { expireAfterSeconds: 0 });
 export const OwnerSession = model('OwnerSession', ownerSessionSchema);
 
-// What the bot knows, as edited by the owner. One document, "clinic"; no document means the demo
-// facts. The PDF's text is kept, never the file itself.
+// What the bot knows, as edited by the owner. One document per profile ("clinic" for the first
+// one); no document means the profile's own facts. The PDF's text is kept, never the file itself.
 const knowledgeSchema = new Schema({
   _id: String,
   services: {

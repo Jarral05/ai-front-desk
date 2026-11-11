@@ -5,13 +5,16 @@ import { z } from 'zod';
 import { LIMITS } from '../config.js';
 import { HttpError } from '../errors.js';
 import { Counter, Lead, SCORES } from '../models.js';
-import { bump, statLastDays, visitorId } from '../lib/counters.js';
+import { bump, statLastDays, visitorId, windows } from '../lib/counters.js';
 import { toCsv } from '../lib/csv.js';
 import { isPasswordHash, verifyPassword } from '../lib/passwords.js';
 import {
   endOwnerSession, findOwnerSession, ownerCookie, readCookie, sameText, startOwnerSession,
 } from '../lib/ownerSession.js';
 import { sameOriginOnly } from '../lib/sameOrigin.js';
+import { getClinic } from '../lib/knowledge.js';
+import { activeProfile } from '../lib/profiles.js';
+import { sampleLeadDocs } from '../lib/samples.js';
 import { knowledgeRoutes } from './knowledge.js';
 
 const LoginInput = z.object({
@@ -42,6 +45,7 @@ function ownerLead(lead) {
     score: lead.score,
     scoreReasons: lead.scoreReasons,
     status: lead.status,
+    sample: Boolean(lead.sample),
   };
 }
 
@@ -108,7 +112,10 @@ export function ownerRoutes({ owner, secure }) {
 
   // Newest first, at most 200, optionally one score only.
   router.get('/leads', async (req, res) => {
-    res.json({ leads: (await findLeads(req.query)).map(ownerLead) });
+    res.json({
+      leads: (await findLeads(req.query)).map(ownerLead),
+      samplesAvailable: activeProfile().sampleLeads.length > 0,
+    });
   });
 
   router.get('/leads.csv', async (req, res) => {
@@ -121,7 +128,7 @@ export function ownerRoutes({ owner, secure }) {
         lead.score, lead.scoreReasons.join('; '), lead.summary ?? '', lead.status,
       ]),
     ];
-    res.attachment(`maple-lane-leads-${new Date().toISOString().slice(0, 10)}.csv`);
+    res.attachment(`${activeProfile().id}-leads-${new Date().toISOString().slice(0, 10)}.csv`);
     res.type('text/csv; charset=utf-8');
     res.send(toCsv(rows));
   });
@@ -140,7 +147,32 @@ export function ownerRoutes({ owner, secure }) {
   router.get('/stats', async (_req, res) => {
     const days = LIMITS.statsDays;
     const [chats, leads, hot] = await Promise.all(['chats', 'leads', 'hot'].map((kind) => statLastDays(kind, days)));
-    res.json({ days, chats, leads, hot });
+    // Sample leads aren't in the daily counters; the page adds them and says so.
+    const [sampleLeads, sampleHot] = await Promise.all([
+      Lead.countDocuments({ sample: true }),
+      Lead.countDocuments({ sample: true, score: 'Hot' }),
+    ]);
+    res.json({ days, chats, leads, hot, samples: { leads: sampleLeads, hot: sampleHot } });
+  });
+
+  // Sample leads for showing the dashboard. Filling again replaces the earlier samples, and
+  // removing them never touches a real lead.
+  router.post('/sample-leads', async (_req, res) => {
+    const { sampleLeads } = activeProfile();
+    if (sampleLeads.length === 0) throw new HttpError(404, 'This page has no sample leads.');
+    if ((await bump(`owner-samples:${windows.hour()}`, 2 * 60 * 60)) > LIMITS.sampleFillsPerHour) {
+      throw new HttpError(429, 'That is a lot of sample fills this hour. Please try again later.');
+    }
+    const services = (await getClinic()).services.map((service) => service.name);
+    await Lead.deleteMany({ sample: true });
+    // The times are the samples' own ("40 minutes ago"), so Mongoose mustn't set them.
+    await Lead.insertMany(sampleLeadDocs(sampleLeads, services), { timestamps: false });
+    res.status(201).json({ count: sampleLeads.length });
+  });
+
+  router.delete('/sample-leads', async (_req, res) => {
+    const { deletedCount } = await Lead.deleteMany({ sample: true });
+    res.json({ count: deletedCount });
   });
 
   router.use('/knowledge', knowledgeRoutes());

@@ -6,6 +6,8 @@ Learning files (outside this repo): `../ai-front-desk-beginners-guide.md`, `../a
 
 ## Commands
 - Run the app: `npm run dev` (page on http://localhost:5173, API on 3000; loads `.env` if present)
+- Run another profile: `npm run dev:hospital` (made-up children's hospital) or `npm run dev:private`
+  (a private profile file in `../local-demos/`, chosen in `../local-demos/private-demo.env`)
 - Every check: `npm test` then `npm run build`
 - Production start: `npm start` (Node 24 or later)
 - Owner password hash: `npm run hash-password` (the owner runs it; hidden typing, prints one line)
@@ -29,4 +31,7 @@ Learning files (outside this repo): `../ai-front-desk-beginners-guide.md`, `../a
 - IMPORTANT: Never read, print or ask for .env or any secret. The owner adds secrets.
 - The AI is called only from the server. Visitor messages and PDF text are untrusted: they never
   change the AI's rules, and are always shown as plain text.
-- No real people's names, emails or client data anywhere. All demo data is made up.
+- No real people's names, emails or client data anywhere in this repository. All demo data is made
+  up. A real business's name goes only in a private profile file outside the repository
+  (`../local-demos/`), shown on the owner's own computer, never on a public address without that
+  business's written OK.

@@ -57,11 +57,11 @@ export function Chat({ clinic, open, onOpen, onClose, question, onQuestionUsed }
   }
 
   return (
-    <section className="chat" role="dialog" aria-label="Chat with the clinic's AI assistant">
+    <section className="chat" role="dialog" aria-label={`Chat with the ${clinic.place}'s AI assistant`}>
       <header className="chat-head">
         <div>
           <strong>AI assistant</strong>
-          <span>Answers from the clinic's facts</span>
+          <span>Answers from the {clinic.place}'s facts</span>
         </div>
         <button type="button" className="chat-close" onClick={onClose} aria-label="Close the chat">×</button>
       </header>
@@ -69,8 +69,9 @@ export function Chat({ clinic, open, onOpen, onClose, question, onQuestionUsed }
       <div className="chat-body">
         <ol className="messages" aria-live="polite">
           {messages.map((m, i) => (
-            // The list only ever grows, so the position is a stable key.
-            <li key={i} className={`msg msg-${m.role}`}>{m.text}</li>
+            // The list only ever grows, so the position is a stable key. dir="auto" lets the
+            // browser lay out an Urdu message right to left and an English one left to right.
+            <li key={i} dir="auto" className={`msg msg-${m.role}`}>{m.text}</li>
           ))}
           {sending && <li className="msg msg-assistant msg-typing">Typing…</li>}
         </ol>
@@ -78,6 +79,7 @@ export function Chat({ clinic, open, onOpen, onClose, question, onQuestionUsed }
         {view === 'form' && (
           <BookingForm
             services={clinic.services.map((s) => s.name)}
+            contact={clinic.contact}
             conversationId={conversationId}
             onDone={() => setView('thanks')}
             onCancel={() => setView('chat')}
@@ -85,7 +87,7 @@ export function Chat({ clinic, open, onOpen, onClose, question, onQuestionUsed }
         )}
         {view === 'thanks' && (
           <p className="thanks" role="status">
-            Thank you. Your booking request has been sent to the clinic, and they'll get back to you.
+            Thank you. Your booking request has been sent to the {clinic.place}, and they'll get back to you.
             In this demo nothing is booked, and your details delete themselves within 24 hours.
           </p>
         )}
@@ -110,6 +112,7 @@ export function Chat({ clinic, open, onOpen, onClose, question, onQuestionUsed }
               maxLength={MAX}
               value={draft}
               placeholder="Ask about prices, hours or booking…"
+              dir="auto"
               onChange={(event) => setDraft(event.target.value)}
               onKeyDown={(event) => {
                 if (event.key === 'Enter' && !event.shiftKey) {

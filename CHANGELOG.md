@@ -4,6 +4,47 @@ All notable changes to this project are recorded here. The format follows
 [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and versions follow
 [Semantic Versioning](https://semver.org/).
 
+## [0.1.4] - 2026-11-11
+
+### Added
+
+- Profiles (`server/lib/profiles.js`): the same app can show another kind of business. With no
+  setting it is Maple Lane Physio, exactly as before. `CLINIC_PROFILE=childrens-hospital` (or
+  `npm run dev:hospital`) shows a made-up children's hospital in Mirpur, "Nanhay Qadam Children's
+  Hospital (Demo)": fees in rupees, a booking form that asks for a phone number (email optional),
+  and answers in English, Urdu or Roman Urdu.
+- Private profiles: `CLINIC_PROFILE_FILE` (or `npm run dev:private`) reads one business's starting
+  facts from a JSON file kept outside this repository. The file is checked at startup and a mistake
+  stops the app with a message that names it. The page and the AI both say it is a demo with
+  sample fees.
+- Fixed answers on the hospital profile that never use the AI: the emergency words a parent types
+  (English, Roman Urdu and Urdu) send them to an emergency room; a medicine or dose question gets
+  a fixed refusal; and the "I'm not sure" sentence carries English and Urdu.
+- Each profile keeps its own saved knowledge, so an edit made while showing one business can't
+  appear under another's name.
+- Chat messages, the message box and the booking note use `dir="auto"`, so Urdu is laid out right
+  to left.
+- Each profile has its own colours (`brand`: dark, accent, light), checked at startup against WCAG
+  AA contrast (4.5:1) wherever they're used, and the business's initials in a circle beside its
+  name. The children's hospital is navy, orange and pale yellow.
+- A private profile can add a logo file (PNG, JPEG or WebP by its first bytes, up to 300 KB, from
+  the profile's own folder; SVG refused), served at `GET /api/logo`.
+- "Fill with sample leads" on the owner's dashboard: six made-up leads per profile (the hospital's
+  in Roman Urdu, Urdu and English, with English summaries), scored by the usual rules, each
+  marked "Sample". Filling again replaces them; "Remove sample leads" deletes only samples. The
+  numbers at the top add them and say "Includes 6 sample leads."
+
+### Changed
+
+- The Knowledge page's price error now reads "Use a whole number, for example 55." (was "whole
+  dollars"), and its price label shows the profile's currency.
+- The owner pages take the business name from the profile instead of fixed text.
+- A lead's email may be empty when the profile asks for a phone number instead.
+- Pale fills (the "Book an appointment" button, the thank-you box, hover states) follow the
+  profile's accent colour instead of a fixed mint. On Maple Lane they look almost the same.
+- The CSV file is named after the profile (`childrens-hospital-leads-...`); Maple Lane's name is
+  unchanged.
+
 ## [0.1.3] - 2026-11-11
 
 ### Added

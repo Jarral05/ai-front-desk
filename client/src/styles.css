@@ -9,6 +9,10 @@
   --line: #e2e8f0;
   --font-head: 'Sora', system-ui, sans-serif;
   --font-body: 'DM Sans', system-ui, sans-serif;
+  /* Pale versions of the accent for fills and borders, so every business's colours carry
+     through. server/lib/brand.js checks the accent can be read on --tint. */
+  --tint: color-mix(in srgb, var(--teal) 7%, #fff);
+  --tint-line: color-mix(in srgb, var(--teal) 35%, #fff);
 }
 
 * { box-sizing: border-box; }
@@ -37,7 +41,20 @@ h3 { font-size: 1.05rem; margin: 0 0 0.25rem; }
 
 .site-header, .site-footer { background: var(--navy); color: #fff; }
 .site-header { padding: 14px 0; }
-.logo { font-family: var(--font-head); font-weight: 600; }
+.logo { font-family: var(--font-head); font-weight: 600; display: inline-flex; align-items: center; gap: 10px; }
+.logo-img { height: 36px; width: auto; max-width: 140px; object-fit: contain; background: #fff; border-radius: 6px; padding: 2px; }
+.monogram {
+  display: inline-grid;
+  place-items: center;
+  flex: none;
+  width: 34px;
+  height: 34px;
+  border-radius: 50%;
+  background: var(--mint);
+  color: var(--navy);
+  font-size: 0.85rem;
+  letter-spacing: 0.02em;
+}
 .site-footer { margin-top: 3rem; padding: 20px 0; font-size: 0.9rem; color: #cbd5e1; }
 
 .hero { padding: 2.5rem 0 0.5rem; }
@@ -99,7 +116,7 @@ button:focus-visible, input:focus-visible, select:focus-visible, textarea:focus-
   font: 500 0.92rem var(--font-body);
   cursor: pointer;
 }
-.chip:hover { background: #f0fdfa; }
+.chip:hover { background: var(--tint); }
 
 /* Chat */
 .chat-bubble {
@@ -156,9 +173,9 @@ button:focus-visible, input:focus-visible, select:focus-visible, textarea:focus-
 .chat-foot { border-top: 1px solid var(--line); padding: 10px 12px 6px; background: #fff; }
 .book-button {
   width: 100%;
-  background: #f0fdfa;
+  background: var(--tint);
   color: var(--teal);
-  border: 1px solid var(--mint);
+  border: 1px solid var(--tint-line);
   border-radius: 8px;
   padding: 8px;
   font: 600 0.92rem var(--font-body);
@@ -175,7 +192,7 @@ button:focus-visible, input:focus-visible, select:focus-visible, textarea:focus-
   font: 400 0.95rem var(--font-body);
 }
 .counter { margin: 4px 0 0; text-align: right; font-size: 0.75rem; color: var(--quiet); }
-.thanks { background: #f0fdfa; border: 1px solid var(--mint); border-radius: 12px; padding: 14px; margin: 12px 0 0; }
+.thanks { background: var(--tint); border: 1px solid var(--tint-line); border-radius: 12px; padding: 14px; margin: 12px 0 0; }
 
 /* Booking form */
 .booking { margin-top: 14px; background: #fff; border: 1px solid var(--line); border-radius: 12px; padding: 14px; display: grid; gap: 10px; }
@@ -242,8 +259,19 @@ button:focus-visible, input:focus-visible, select:focus-visible, textarea:focus-
   font: 500 0.82rem var(--font-body);
   cursor: pointer;
 }
-.password-toggle:hover { background: #f0fdfa; color: var(--teal); }
+.password-toggle:hover { background: var(--tint); color: var(--teal); }
 .owner-title { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 12px; margin-bottom: 1rem; }
+.owner-actions { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; }
+.sample-tag {
+  display: inline-block;
+  margin-left: 8px;
+  padding: 1px 8px;
+  border-radius: 999px;
+  background: var(--line);
+  color: var(--quiet);
+  font: 500 0.75rem/1.6 var(--font-body);
+  vertical-align: middle;
+}
 a.button { display: inline-block; text-decoration: none; }
 .button-danger { background: #b91c1c; }
 .stack { display: grid; gap: 12px; }

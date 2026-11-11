@@ -18,6 +18,12 @@ export const EMERGENCY_REPLY = 'This sounds like it could be an emergency. Pleas
   + 'emergency services now (for example 911, 999 or 112). This chat is a demo and cannot help '
   + 'in an emergency.';
 
-export function looksLikeEmergency(text) {
-  return EMERGENCY.some((pattern) => pattern.test(text));
+// `extra` is a profile's own list (lib/profiles.js), for example a children's hospital's.
+export function looksLikeEmergency(text, extra = []) {
+  return matchesAny(text, [...EMERGENCY, ...extra]);
+}
+
+// The same check for any other fixed-answer list, such as a hospital's medicine questions.
+export function matchesAny(text, patterns) {
+  return patterns.some((pattern) => pattern.test(text));
 }

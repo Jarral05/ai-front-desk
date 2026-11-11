@@ -6,7 +6,7 @@ const EMPTY = { name: '', email: '', phone: '', service: '', timing: '', message
 
 // The booking form inside the chat. The server checks every field again; the checks here only
 // save the visitor a round trip.
-export function BookingForm({ services, conversationId, onDone, onCancel }) {
+export function BookingForm({ services, contact = 'email', conversationId, onDone, onCancel }) {
   const [values, setValues] = useState(EMPTY);
   const [fields, setFields] = useState({});
   const [error, setError] = useState('');
@@ -28,22 +28,25 @@ export function BookingForm({ services, conversationId, onDone, onCancel }) {
 
   const problem = (name) => fields[name] && <span className="field-error" id={`${name}-error`}>{fields[name]}</span>;
   const described = (name) => (fields[name] ? { 'aria-invalid': true, 'aria-describedby': `${name}-error` } : {});
+  // The profile decides which contact detail is a must: email for the clinic, phone for a hospital.
+  const needsPhone = contact === 'phone';
+  const optional = <span className="optional">(optional)</span>;
 
   return (
     <form className="booking" onSubmit={submit} noValidate>
-      <p className="booking-note">Demo form: please use a made-up name and email.</p>
+      <p className="booking-note">Demo form: please use a made-up name and {needsPhone ? 'phone number' : 'email'}.</p>
 
       <label>Name
         <input value={values.name} onChange={set('name')} maxLength={80} autoComplete="off" required {...described('name')} />
         {problem('name')}
       </label>
-      <label>Email
-        <input type="email" value={values.email} onChange={set('email')} maxLength={120} autoComplete="off" required {...described('email')} />
+      {/* The label text sits in one span: the label is a grid, and each child gets its own row. */}
+      <label><span>Email {needsPhone && optional}</span>
+        <input type="email" value={values.email} onChange={set('email')} maxLength={120} autoComplete="off" required={!needsPhone} {...described('email')} />
         {problem('email')}
       </label>
-      {/* The label text sits in one span: the label is a grid, and each child gets its own row. */}
-      <label><span>Phone <span className="optional">(optional)</span></span>
-        <input type="tel" value={values.phone} onChange={set('phone')} maxLength={30} autoComplete="off" {...described('phone')} />
+      <label><span>Phone {!needsPhone && optional}</span>
+        <input type="tel" value={values.phone} onChange={set('phone')} maxLength={30} autoComplete="off" required={needsPhone} {...described('phone')} />
         {problem('phone')}
       </label>
       <label>Service
@@ -61,8 +64,8 @@ export function BookingForm({ services, conversationId, onDone, onCancel }) {
         </select>
         {problem('timing')}
       </label>
-      <label><span>Anything else? <span className="optional">(optional)</span></span>
-        <textarea value={values.message} onChange={set('message')} maxLength={500} rows={3} {...described('message')} />
+      <label><span>Anything else? {optional}</span>
+        <textarea dir="auto" value={values.message} onChange={set('message')} maxLength={500} rows={3} {...described('message')} />
         {problem('message')}
       </label>
 

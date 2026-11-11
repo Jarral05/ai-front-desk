@@ -8,8 +8,9 @@ import { AiError } from '../lib/ai.js';
 import { clinicFactsText } from '../lib/clinic.js';
 import { allowVisitorMessage, countStat, reserveAiCall, visitorId } from '../lib/counters.js';
 import { getClinic } from '../lib/knowledge.js';
-import { chatRules, NOT_SURE } from '../lib/prompts.js';
-import { EMERGENCY_REPLY, looksLikeEmergency } from '../lib/safety.js';
+import { activeProfile } from '../lib/profiles.js';
+import { chatRules, notSure } from '../lib/prompts.js';
+import { EMERGENCY_REPLY, looksLikeEmergency, matchesAny } from '../lib/safety.js';
 import { HttpError } from '../errors.js';
 
 const ChatInput = z.object({
@@ -30,9 +31,9 @@ async function findOrStart(conversationId, visitor) {
 }
 
 // What the visitor sees. The reply is cut to a sensible length; the page shows it as plain text.
-function cleanReply(text) {
+function cleanReply(text, clinic) {
   const reply = String(text ?? '').trim().slice(0, 1200);
-  return reply || NOT_SURE;
+  return reply || notSure(clinic);
 }
 
 export function chatRoutes({ ai }) {
@@ -59,7 +60,9 @@ export function chatRoutes({ ai }) {
     };
 
     // Emergencies first: a fixed answer that needs no AI and is never refused by a limit.
-    if (looksLikeEmergency(message)) return save(EMERGENCY_REPLY);
+    // The profile's own list and reply are fixed in code, so this needs no database read either.
+    const profile = activeProfile();
+    if (looksLikeEmergency(message, profile.emergencyPatterns)) return save(profile.emergencyReply ?? EMERGENCY_REPLY);
 
     if (conversation.visitorMessages >= LIMITS.messagesPerConversation) {
       throw new HttpError(429, 'This chat has reached its limit of 20 messages. You can still book with the form, or start a new chat.');
@@ -67,6 +70,9 @@ export function chatRoutes({ ai }) {
     if (!(await allowVisitorMessage(visitor))) {
       throw new HttpError(429, "You've sent a lot of messages this hour. Please try again later, or use the booking form.");
     }
+    // A profile's fixed refusal (a hospital's "which medicine?"): instant, and it uses no AI call.
+    if (profile.adviceReply && matchesAny(message, profile.advicePatterns)) return save(profile.adviceReply);
+
     if (!ai) throw new HttpError(503, "The assistant isn't switched on yet. Please use the booking form.");
 
     const slot = await reserveAiCall();
@@ -77,10 +83,10 @@ export function chatRoutes({ ai }) {
     const clinic = await getClinic();
     try {
       const text = await ai.generate({
-        system: chatRules(clinicFactsText(clinic), clinic.pdf?.text ?? ''),
+        system: chatRules(clinicFactsText(clinic), clinic.pdf?.text ?? '', clinic),
         messages: [...conversation.messages.slice(-2 * LIMITS.messagesPerConversation), { role: 'visitor', text: message }],
       });
-      return save(cleanReply(text));
+      return save(cleanReply(text, clinic));
     } catch (error) {
       if (error instanceof AiError && error.kind === 'busy') {
         throw new HttpError(503, 'The assistant is busy. Please try again in a minute.');

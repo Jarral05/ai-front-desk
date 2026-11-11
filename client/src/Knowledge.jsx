@@ -130,7 +130,7 @@ export function Knowledge({ onSignedOut }) {
                 <input inputMode="numeric" value={service.minutes} maxLength={4} onChange={setService(i, 'minutes')} {...marked(`services.${i}.minutes`)} />
                 {problem(`services.${i}.minutes`)}
               </label>
-              <label>Price ($)
+              <label>Price ({view.currency})
                 <input inputMode="numeric" value={service.price} maxLength={6} onChange={setService(i, 'price')} {...marked(`services.${i}.price`)} />
                 {problem(`services.${i}.price`)}
               </label>

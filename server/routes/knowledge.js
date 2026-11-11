@@ -19,7 +19,7 @@ const Service = z.object({
     .refine((name) => name.toLowerCase() !== 'not sure', '"Not sure" is already a choice on the booking form.'),
   minutes: z.number('Enter the minutes as a number.').int('Use whole minutes.')
     .min(5, 'At least 5 minutes.').max(480, 'At most 480 minutes.'),
-  price: z.number('Enter the price as a number.').int('Use whole dollars, for example 55.')
+  price: z.number('Enter the price as a number.').int('Use a whole number, for example 55.')
     .min(0, "The price can't be below 0.").max(100000, 'That price is too high.'),
 });
 
@@ -57,6 +57,7 @@ async function view() {
     facts: [...clinic.facts],
     greeting: clinic.greeting,
     notice: AI_NOTICE,
+    currency: clinic.currency.symbol.trim(),
     pdf: clinic.pdf
       ? { name: clinic.pdf.name, pages: clinic.pdf.pages, chars: clinic.pdf.text.length, uploadedAt: clinic.pdf.uploadedAt, text: clinic.pdf.text }
       : null,

@@ -32,6 +32,19 @@ chat says it's switched off, and bookings are saved unscored.
 To try the owner's dashboard, run `npm run hash-password`, put the printed line and your email in
 `.env` as `OWNER_PASSWORD_HASH` and `OWNER_EMAIL`, restart, and open http://localhost:5173/owner.
 
+## Other businesses (profiles)
+
+The app can show a different made-up business without a second copy of the code:
+
+```bash
+npm run dev:hospital   # a made-up children's hospital: rupees, phone number, English and Urdu
+```
+
+A profile holds the words and settings that differ (clinic or hospital, currency, email or phone,
+languages, fixed safety answers) and the starting facts. `CLINIC_PROFILE` chooses a built-in one;
+`CLINIC_PROFILE_FILE` reads a private one from a JSON file outside this repository. Why:
+[docs/decisions/0006-profiles.md](docs/decisions/0006-profiles.md).
+
 ## Checks
 
 ```bash

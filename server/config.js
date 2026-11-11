@@ -1,5 +1,6 @@
 // All settings in one place. Secrets come from environment variables, never from code.
 import { isPasswordHash } from './lib/passwords.js';
+import { loadProfile } from './lib/profiles.js';
 
 const isProd = process.env.NODE_ENV === 'production';
 
@@ -26,6 +27,9 @@ export const config = {
   geminiApiKey: process.env.GEMINI_API_KEY || '',
   // gemini-3.5-flash-lite has the highest free per-minute limit (decision 0002).
   geminiModel: process.env.GEMINI_MODEL || 'gemini-3.5-flash-lite',
+  // Which business this copy shows (lib/profiles.js). A wrong name or a broken profile file
+  // stops the app here, at startup, with a clear message.
+  profile: loadProfile(),
   // The one owner account. The password itself is never stored: only its hash.
   owner: {
     email: (process.env.OWNER_EMAIL || '').trim().toLowerCase(),
@@ -60,4 +64,7 @@ export const LIMITS = Object.freeze({
   pdfPages: 20,
   pdfTimeoutMs: 10000,
   pdfUploadsPerHour: 20,
+
+  // Sample leads for showing the dashboard (lib/samples.js).
+  sampleFillsPerHour: 20,
 });

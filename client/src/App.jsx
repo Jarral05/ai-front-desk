@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react';
 import { Chat } from './Chat.jsx';
+import { applyBrand, Logo } from './brand.jsx';
 
 // The clinic page, filled from GET /api/clinic, with the AI chat in the corner.
 export function App() {
@@ -17,7 +18,13 @@ export function App() {
     let active = true;
     fetch('/api/clinic')
       .then((res) => (res.ok ? res.json() : Promise.reject(new Error(String(res.status)))))
-      .then((data) => active && setClinic(data))
+      .then((data) => {
+        if (!active) return;
+        setClinic(data);
+        applyBrand(data.brand);
+        // index.html carries the first profile's name; any other profile sets its own here.
+        document.title = data.name;
+      })
       .catch(() => active && setFailed(true));
     return () => {
       active = false;
@@ -27,16 +34,16 @@ export function App() {
   return (
     <>
       <div className="demo-bar" role="note">
-        Demo website for a made-up clinic. Please don't enter real personal details.
+        {clinic?.demoNote ?? "Demo website for a made-up clinic. Please don't enter real personal details."}
       </div>
       <header className="site-header">
         <div className="wrap">
-          <span className="logo">{clinic?.name ?? 'Maple Lane Physio (Demo)'}</span>
+          <span className="logo"><Logo clinic={clinic} />{clinic?.name ?? 'Maple Lane Physio (Demo)'}</span>
         </div>
       </header>
 
       <main className="wrap">
-        {failed && <p className="notice">The clinic details couldn't load. Please refresh the page.</p>}
+        {failed && <p className="notice">The details couldn't load. Please refresh the page.</p>}
         {!clinic && !failed && <p className="quiet">Loading…</p>}
         {clinic && (
           <>
@@ -56,13 +63,13 @@ export function App() {
             </section>
 
             <section aria-labelledby="services-title">
-              <h2 id="services-title">Services</h2>
+              <h2 id="services-title">{clinic.servicesTitle}</h2>
               <ul className="cards">
                 {clinic.services.map((service) => (
                   <li key={service.name} className="card">
                     <h3>{service.name}</h3>
                     <p className="quiet">{service.minutes} minutes</p>
-                    <p className="price">${service.price}</p>
+                    <p className="price">{clinic.currency}{service.price.toLocaleString('en-US')}</p>
                   </li>
                 ))}
               </ul>
@@ -88,7 +95,7 @@ export function App() {
 
       <footer className="site-footer">
         <div className="wrap">
-          A demo app. The clinic, its people and its prices are invented. · <a href="/owner">Owner sign-in</a>
+          {clinic?.footerNote ?? 'A demo app.'} · <a href="/owner">Owner sign-in</a>
         </div>
       </footer>
 
