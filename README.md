@@ -32,6 +32,9 @@ chat says it's switched off, and bookings are saved unscored.
 To try the owner's dashboard, run `npm run hash-password`, put the printed line and your email in
 `.env` as `OWNER_PASSWORD_HASH` and `OWNER_EMAIL`, restart, and open http://localhost:5173/owner.
 
+If a start command says "Not started: an earlier copy of the app is still running", run
+`npm run stop`, then start again.
+
 ## Other businesses (profiles)
 
 The app can show a different made-up business without a second copy of the code:

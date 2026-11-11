@@ -4,6 +4,24 @@ All notable changes to this project are recorded here. The format follows
 [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and versions follow
 [Semantic Versioning](https://semver.org/).
 
+## [0.1.5] - 2026-11-11
+
+### Fixed
+
+- `npm run dev` or `npm run dev:hospital` could show the previous business's page: an earlier copy
+  left running (Ctrl+C in Git Bash doesn't always stop the server) kept port 3000, the new server
+  couldn't start, and the new page talked to the old one. Every dev command now checks ports 3000
+  and 5173 first (`scripts/check-ports.js`) and refuses to start with a message that says what to do.
+- The page's dev server no longer moves to another port when 5173 is busy (`strictPort`).
+- The server explains a busy port in words instead of a stack trace.
+
+### Added
+
+- `npm run stop` (`scripts/stop.js`): stops a copy of the app left on ports 3000 and 5173, including
+  `node --watch`'s parent. Only Node programs are stopped; anything else is named and left alone.
+- The server's start line names the business it shows, for example "listening on port 3000, showing
+  Maple Lane Physio (Demo)".
+
 ## [0.1.4] - 2026-11-11
 
 ### Added

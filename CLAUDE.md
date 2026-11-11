@@ -8,6 +8,8 @@ Learning files (outside this repo): `../ai-front-desk-beginners-guide.md`, `../a
 - Run the app: `npm run dev` (page on http://localhost:5173, API on 3000; loads `.env` if present)
 - Run another profile: `npm run dev:hospital` (made-up children's hospital) or `npm run dev:private`
   (a private profile file in `../local-demos/`, chosen in `../local-demos/private-demo.env`)
+- Stop a copy left running: `npm run stop` (every dev command refuses to start while ports 3000 or
+  5173 are busy)
 - Every check: `npm test` then `npm run build`
 - Production start: `npm start` (Node 24 or later)
 - Owner password hash: `npm run hash-password` (the owner runs it; hidden typing, prints one line)
