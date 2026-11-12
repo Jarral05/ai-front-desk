@@ -262,6 +262,14 @@ button:focus-visible, input:focus-visible, select:focus-visible, textarea:focus-
 .password-toggle:hover { background: var(--tint); color: var(--teal); }
 .owner-title { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 12px; margin-bottom: 1rem; }
 .owner-actions { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; }
+.delivery { display: flex; flex-wrap: wrap; gap: 6px 16px; font-size: 0.85rem; }
+.delivery-item { display: inline-flex; align-items: center; gap: 6px; color: var(--quiet); }
+.delivery-failed { color: #b91c1c; font-weight: 500; }
+.retry { padding: 2px 8px; font-size: 0.85rem; }
+.lead-mine { border-color: var(--teal); box-shadow: 0 0 0 2px var(--tint-line); }
+.lead-intro { color: var(--quiet); max-width: 60ch; }
+/* .thanks in front: the general "a.button" rule would otherwise keep it on the text's line. */
+.thanks .see-owner { display: block; width: fit-content; margin-top: 12px; text-decoration: none; }
 .sample-tag {
   display: inline-block;
   margin-left: 8px;

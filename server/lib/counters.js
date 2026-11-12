@@ -69,5 +69,8 @@ export async function reserveAiCall() {
   const minute = await bump(`ai-minute:${windows.minute()}`, 2 * 60);
   if (minute > LIMITS.aiCallsPerMinute) return 'minute';
   const day = await bump(dayKey, 2 * 24 * 60 * 60);
+  // Logged once a day, when the last allowed call is taken (OWASP A09): the owner should know the
+  // chat has stopped answering until tomorrow.
+  if (day === LIMITS.aiCallsPerDay) console.warn(`AI daily limit reached: ${LIMITS.aiCallsPerDay} calls today. The chat answers again tomorrow.`);
   return day > LIMITS.aiCallsPerDay ? 'day' : 'ok';
 }

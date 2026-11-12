@@ -1,5 +1,6 @@
 // All settings in one place. Secrets come from environment variables, never from code.
 import { isPasswordHash } from './lib/passwords.js';
+import { notifySettings } from './lib/notifySettings.js';
 import { loadProfile } from './lib/profiles.js';
 
 const isProd = process.env.NODE_ENV === 'production';
@@ -30,6 +31,9 @@ export const config = {
   // Which business this copy shows (lib/profiles.js). A wrong name or a broken profile file
   // stops the app here, at startup, with a clear message.
   profile: loadProfile(),
+  // Lead email and Google Sheet (lib/notify.js). Null when not set up; a broken setting stops
+  // the app at startup.
+  notify: notifySettings(),
   // The one owner account. The password itself is never stored: only its hash.
   owner: {
     email: (process.env.OWNER_EMAIL || '').trim().toLowerCase(),
@@ -67,4 +71,8 @@ export const LIMITS = Object.freeze({
 
   // Sample leads for showing the dashboard (lib/samples.js).
   sampleFillsPerHour: 20,
+
+  // Lead email and Google Sheet (Part 6). Apps Script can take a few seconds to wake up.
+  notifyTimeoutMs: 10000,
+  notifyRetriesPerHour: 30,
 });

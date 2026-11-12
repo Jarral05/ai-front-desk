@@ -89,6 +89,7 @@ export function Chat({ clinic, open, onOpen, onClose, question, onQuestionUsed }
           <p className="thanks" role="status">
             Thank you. Your booking request has been sent to the {clinic.place}, and they'll get back to you.
             In this demo nothing is booked, and your details delete themselves within 24 hours.
+            <a className="button see-owner" href="/my-lead">See what the owner sees</a>
           </p>
         )}
         <div ref={endRef} />

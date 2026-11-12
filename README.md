@@ -48,6 +48,13 @@ languages, fixed safety answers) and the starting facts. `CLINIC_PROFILE` choose
 `CLINIC_PROFILE_FILE` reads a private one from a JSON file outside this repository. Why:
 [docs/decisions/0006-profiles.md](docs/decisions/0006-profiles.md).
 
+## Lead email and Google Sheet
+
+Optional. Each new lead can be emailed to you and added to your own Google Sheet through a small
+Apps Script in your Google account: [docs/apps-script-setup.md](docs/apps-script-setup.md). Without
+it, leads still save and show on the dashboard. Security and AI checks:
+[docs/security-check.md](docs/security-check.md).
+
 ## Checks
 
 ```bash

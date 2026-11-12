@@ -1,6 +1,6 @@
 {
   "name": "ai-front-desk",
-  "version": "0.1.5",
+  "version": "0.1.6",
   "private": true,
   "description": "A demo AI front desk for a made-up clinic: an AI chat that answers from the clinic's facts and turns enquiries into scored leads.",
   "type": "module",
@@ -16,6 +16,7 @@
     "predev:private": "node scripts/check-ports.js",
     "dev:private": "concurrently -n api,web \"node --env-file-if-exists=.env --env-file=../local-demos/private-demo.env --watch server.js\" \"vite\"",
     "stop": "node scripts/stop.js",
+    "make-secret": "node scripts/make-secret.js",
     "build": "vite build",
     "postinstall": "vite build",
     "start": "node server.js",

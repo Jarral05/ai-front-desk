@@ -9,13 +9,21 @@ import { App } from './App.jsx';
 // The owner's pages are a separate file that loads only when someone opens /owner, so visitors to
 // the clinic page never download the dashboard.
 const Owner = lazy(() => import('./Owner.jsx'));
+const MyLead = lazy(() => import('./MyLead.jsx'));
 const isOwnerPage = /^\/owner(\/|$)/.test(window.location.pathname);
+const isMyLeadPage = /^\/my-lead\/?$/.test(window.location.pathname);
+
+function Page() {
+  if (isOwnerPage) return <Owner />;
+  if (isMyLeadPage) return <MyLead />;
+  return <App />;
+}
 
 createRoot(document.getElementById('root')).render(
   <StrictMode>
-    {isOwnerPage ? (
+    {isOwnerPage || isMyLeadPage ? (
       <Suspense fallback={null}>
-        <Owner />
+        <Page />
       </Suspense>
     ) : <App />}
   </StrictMode>,

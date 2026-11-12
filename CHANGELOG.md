@@ -4,6 +4,38 @@ All notable changes to this project are recorded here. The format follows
 [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and versions follow
 [Semantic Versioning](https://semver.org/).
 
+## [0.1.6] - 2026-11-12
+
+### Added
+
+- Part 6, lead email and Google Sheet: every new lead is sent to the owner's own Google Apps Script
+  (`apps-script/Code.gs`, setup in `docs/apps-script-setup.md`), which emails it to the one address
+  saved in the script and adds a row to the owner's sheet. Sent after the visitor's answer, so a
+  slow script never keeps them waiting; a failure never loses the lead. Settings:
+  `NOTIFY_WEBHOOK_URL` (only a `script.google.com/.../exec` address), `NOTIFY_SECRET` (at least 32
+  characters; `npm run make-secret`), optional `NOTIFY_CHANNELS`.
+- The dashboard shows "Email: sent · Sheet: Not sent" on each lead, with Retry for a failed one
+  (`POST /api/owner/leads/:id/notify`, 30 an hour). The script adds each lead once and emails it
+  once, even when Retry repeats it.
+- Sheet cells can't run as formulas (the CSV download's guard), and email subjects can't carry line
+  breaks.
+- "See what the owner sees": after booking, the visitor opens `/my-lead` and sees their own lead
+  exactly as the owner's dashboard shows it, next to six example leads. Found through an HttpOnly
+  cookie (`__Host-` and Secure on the live site) whose token is stored only as a SHA-256; there is
+  no lead ID in any address.
+- Part 7: `docs/security-check.md`, every item of the OWASP Top 10:2025 and the OWASP Top 10 for LLM
+  Applications 2025 with its test or a reason, and a 14-question check against the real Gemini
+  model (15 of 15 on the second run).
+- Log lines (OWASP A09): once when one visitor reaches 10 failed owner sign-ins (without the IP,
+  email or password), and once when the AI's daily limit is used up.
+- Tests for database operators sent as values, `__proto__` in a request body, files outside the
+  built page, and the Apps Script itself (run with stand-ins for Google's services).
+
+### Changed
+
+- The lead card is one shared piece (`client/src/LeadCard.jsx`) for the dashboard and the buyer's
+  page. The lead view sent to the dashboard gains `notify`.
+
 ## [0.1.5] - 2026-11-11
 
 ### Fixed

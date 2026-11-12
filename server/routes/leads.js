@@ -9,6 +9,9 @@ import { serviceChoices } from '../lib/clinic.js';
 import { getClinic } from '../lib/knowledge.js';
 import { leadData, LEAD_JSON_SCHEMA, leadRules } from '../lib/prompts.js';
 import { scoreLead } from '../lib/score.js';
+import { deliverLead } from '../lib/notify.js';
+import { config } from '../config.js';
+import { myLeadCookie, newViewToken } from './myLead.js';
 import { HttpError } from '../errors.js';
 
 // `missing` is what the visitor reads when the box was left out altogether.
@@ -67,8 +70,9 @@ export async function summarise(ai, lead, messages, clinic) {
   }
 }
 
-export function leadRoutes({ ai }) {
+export function leadRoutes({ ai, notifier = null, secure = false }) {
   const router = express.Router();
+  const viewCookie = myLeadCookie(secure);
 
   router.post('/', async (req, res) => {
     const clinic = await getClinic();
@@ -96,6 +100,7 @@ export function leadRoutes({ ai }) {
       ? await Conversation.findOne({ _id: input.conversationId, visitor }).lean()
       : null;
 
+    const view = newViewToken();
     const lead = await Lead.create({
       name: input.name,
       email: input.email.toLowerCase(),
@@ -105,6 +110,9 @@ export function leadRoutes({ ai }) {
       message: input.message,
       conversationId: conversation?._id ?? null,
       visitor,
+      viewToken: view.hash,
+      // Shown as "Sending" until the owner's script has answered.
+      ...(notifier ? Object.fromEntries(notifier.channels.map((c) => [`notify.${c}.status`, 'pending'])) : {}),
     });
     await countStat('leads');
 
@@ -118,8 +126,20 @@ export function leadRoutes({ ai }) {
       if (score === 'Hot') await countStat('hot');
     }
 
-    // The visitor gets a thank-you, not their score: that's for the owner.
+    // The visitor gets a thank-you, not their score: that's for the owner. The cookie lets this
+    // browser open "See what the owner sees" (routes/myLead.js).
+    res.cookie(viewCookie.name, view.token, viewCookie.options);
     res.status(201).json({ ok: true });
+
+    // After the answer, so a slow script never keeps the visitor waiting. The lead is already
+    // saved; a failure only marks it "Not sent". The tests wait for app.locals.pending.
+    if (notifier) {
+      const job = deliverLead(notifier, lead._id, clinic, notifier.channels, {
+        dashboardUrl: config.publicUrl ? `${config.publicUrl.replace(/\/$/, '')}/owner` : '',
+      });
+      req.app.locals.pending?.add(job);
+      job.finally(() => req.app.locals.pending?.delete(job));
+    }
   });
 
   return router;

@@ -2,7 +2,7 @@
 // Everything after the sign-in check refuses anyone who isn't signed in.
 import express from 'express';
 import { z } from 'zod';
-import { LIMITS } from '../config.js';
+import { config, LIMITS } from '../config.js';
 import { HttpError } from '../errors.js';
 import { Counter, Lead, SCORES } from '../models.js';
 import { bump, statLastDays, visitorId, windows } from '../lib/counters.js';
@@ -15,6 +15,8 @@ import { sameOriginOnly } from '../lib/sameOrigin.js';
 import { getClinic } from '../lib/knowledge.js';
 import { activeProfile } from '../lib/profiles.js';
 import { sampleLeadDocs } from '../lib/samples.js';
+import { ownerLead } from '../lib/leadView.js';
+import { CHANNELS, deliverLead } from '../lib/notify.js';
 import { knowledgeRoutes } from './knowledge.js';
 
 const LoginInput = z.object({
@@ -29,25 +31,7 @@ const BAD_LOGIN = "That email and password don't match.";
 const LeadFilter = z.object({ score: z.enum(SCORES).optional() });
 const StatusInput = z.object({ status: z.enum(['New', 'Contacted']) });
 const LEAD_ID = /^[a-f0-9]{24}$/i;
-
-// What the owner sees of a lead. The visitor's fingerprint and chat ID stay on the server.
-function ownerLead(lead) {
-  return {
-    id: String(lead._id),
-    receivedAt: lead.createdAt,
-    name: lead.name,
-    email: lead.email,
-    phone: lead.phone,
-    service: lead.service,
-    timing: lead.timing,
-    message: lead.message,
-    summary: lead.summary,
-    score: lead.score,
-    scoreReasons: lead.scoreReasons,
-    status: lead.status,
-    sample: Boolean(lead.sample),
-  };
-}
+const RetryInput = z.object({ channel: z.enum(CHANNELS) });
 
 function findLeads(query) {
   const parsed = LeadFilter.safeParse(query);
@@ -56,7 +40,7 @@ function findLeads(query) {
   return Lead.find(filter).sort({ createdAt: -1 }).limit(LIMITS.dashboardLeads).lean();
 }
 
-export function ownerRoutes({ owner, secure }) {
+export function ownerRoutes({ owner, secure, notifier = null }) {
   const router = express.Router();
   const cookie = ownerCookie(secure);
   const { maxAge: _lifetime, ...clearOptions } = cookie.options; // clearing a cookie takes no lifetime
@@ -74,8 +58,15 @@ export function ownerRoutes({ owner, secure }) {
 
     // Counted before the password is checked, so every guess costs a try. The count deletes
     // itself an hour after the first try; a successful sign-in clears it.
-    const triesKey = `owner-login:${visitorId(req.ip)}`;
-    if ((await bump(triesKey, 60 * 60)) > LIMITS.ownerLoginTriesPerHour) {
+    const visitor = visitorId(req.ip);
+    const triesKey = `owner-login:${visitor}`;
+    const tries = await bump(triesKey, 60 * 60);
+    // Logged once, at the first refusal (OWASP A09): repeated guessing is worth knowing about. Only
+    // the start of the visitor's fingerprint, never the IP, the email typed or the password.
+    if (tries === LIMITS.ownerLoginTriesPerHour + 1) {
+      console.warn(`Owner sign-in: ${LIMITS.ownerLoginTriesPerHour} failed tries from visitor ${visitor.slice(0, 8)}; refused for up to an hour.`);
+    }
+    if (tries > LIMITS.ownerLoginTriesPerHour) {
       throw new HttpError(429, 'Too many tries. Please wait an hour and try again.');
     }
 
@@ -141,6 +132,25 @@ export function ownerRoutes({ owner, secure }) {
       : null;
     if (!lead) throw new HttpError(404, 'That lead no longer exists. Leads delete themselves after 24 hours.');
     res.json({ lead: ownerLead(lead) });
+  });
+
+  // Retry for a lead whose email or sheet row wasn't sent. The owner waits for the answer.
+  router.post('/leads/:id/notify', async (req, res) => {
+    const parsed = RetryInput.safeParse(req.body ?? {});
+    if (!parsed.success) throw new HttpError(400, 'Choose email or sheet.');
+    const { channel } = parsed.data;
+    if (!notifier || !notifier.channels.includes(channel)) {
+      throw new HttpError(409, channel === 'email' ? "Lead emails aren't set up." : "The Google Sheet isn't set up.");
+    }
+    const lead = LEAD_ID.test(req.params.id) ? await Lead.findById(req.params.id).lean() : null;
+    if (!lead || lead.sample) throw new HttpError(404, 'That lead no longer exists. Leads delete themselves after 24 hours.');
+    if ((await bump(`owner-notify:${windows.hour()}`, 2 * 60 * 60)) > LIMITS.notifyRetriesPerHour) {
+      throw new HttpError(429, 'That is a lot of retries this hour. Please try again later.');
+    }
+    await deliverLead(notifier, lead._id, await getClinic(), [channel], {
+      dashboardUrl: config.publicUrl ? `${config.publicUrl.replace(/\/$/, '')}/owner` : '',
+    });
+    res.json({ lead: ownerLead(await Lead.findById(lead._id).lean()) });
   });
 
   // The last 7 days, from the daily counters (lib/counters.js).

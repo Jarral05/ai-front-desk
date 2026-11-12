@@ -38,6 +38,14 @@ conversationSchema.index({ expiresAt: 1 }, { expireAfterSeconds: 0 });
 export const Conversation = model('Conversation', conversationSchema);
 
 export const SCORES = ['Hot', 'Warm', 'Cold', 'Unscored'];
+
+// How one copy of a lead reached the owner (lib/notify.js): "off" when that way isn't set up.
+const deliverySchema = new Schema({
+  status: { type: String, enum: ['off', 'pending', 'sent', 'failed'], default: 'off' },
+  tries: { type: Number, default: 0 },
+  at: { type: Date, default: null },
+  error: { type: String, default: '', maxlength: 80 },
+}, { _id: false });
 export const TIMINGS = ['This week', 'In the next two weeks', 'Later', 'Not sure'];
 
 const leadSchema = new Schema({
@@ -57,10 +65,17 @@ const leadSchema = new Schema({
   status: { type: String, enum: ['New', 'Contacted'], default: 'New' },
   // Made up for showing the dashboard (lib/samples.js); shown with a "Sample" label.
   sample: { type: Boolean, default: false },
+  notify: {
+    email: { type: deliverySchema, default: () => ({}) },
+    sheet: { type: deliverySchema, default: () => ({}) },
+  },
+  // The SHA-256 of the visitor's "See what the owner sees" token (routes/myLead.js), never the token.
+  viewToken: { type: String, default: null },
   expiresAt: { type: Date, default: () => expiresInHours() },
 }, { timestamps: true, versionKey: false });
 leadSchema.index({ expiresAt: 1 }, { expireAfterSeconds: 0 });
 leadSchema.index({ createdAt: -1 });
+leadSchema.index({ viewToken: 1 }, { sparse: true });
 export const Lead = model('Lead', leadSchema);
 
 // The owner's sign-ins. The browser holds a random token; only its SHA-256 fingerprint is stored

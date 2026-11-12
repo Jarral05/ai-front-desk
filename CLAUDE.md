@@ -13,6 +13,7 @@ Learning files (outside this repo): `../ai-front-desk-beginners-guide.md`, `../a
 - Every check: `npm test` then `npm run build`
 - Production start: `npm start` (Node 24 or later)
 - Owner password hash: `npm run hash-password` (the owner runs it; hidden typing, prints one line)
+- Lead email and sheet secret: `npm run make-secret` (the owner runs it). Setup: docs/apps-script-setup.md
 
 ## How we work
 - One part of docs/PLAN.md at a time. Every change comes with tests; run them and show the output.

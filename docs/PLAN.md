@@ -63,6 +63,9 @@ part of that day moves to the next day; nothing is skipped.
   and Retry; "See what the owner sees" through an HttpOnly cookie.
 - **Done when:** a test lead arrives by email and as a sheet row, and turning either off shows
   "Not sent" with a working Retry.
+  **Built 12 Nov (0.1.6):** 123 tests, 12 protections broken on purpose and caught, a phone-width
+  check with a stand-in script (15/15). **Still to do:** the owner's real Google run, steps 1 to 4 in
+  `docs/apps-script-setup.md`.
 
 ## Part 7: Security and AI quality check
 
@@ -70,6 +73,8 @@ part of that day moves to the next day; nothing is skipped.
 - 12-question AI check, including attempts to change the rules, ask for medical advice, and pull
   out other visitors' data.
 - **Done when:** every item is answered and every test passes.
+  **Done 12 Nov:** `docs/security-check.md`, 20 OWASP items, 2 log lines added, the real AI check
+  15/15 on run 2 (run 1: Google timeouts).
 
 ## Part 8: Live
 

@@ -88,3 +88,25 @@ export async function signIn(app) {
   const cookie = res.headers['set-cookie'][0].split(';')[0];
   return { cookie, owner: newVisitor(app, cookie), res };
 }
+
+// A stand-in for the owner's Apps Script. `reply(channel, message)` returns { ok, error } or an
+// Error to throw; it records every call. The secret never reaches it: that's the real notifier's job.
+export function fakeNotifier(reply = () => ({ ok: true }), channels = ['email', 'sheet']) {
+  const notifier = {
+    channels,
+    calls: [],
+    reply,
+    async send(channel, message) {
+      notifier.calls.push({ channel, message });
+      const answer = notifier.reply(channel, message);
+      if (answer instanceof Error) throw answer;
+      return answer;
+    },
+  };
+  return notifier;
+}
+
+// Waits for the lead emails and sheet rows sent after the visitor's answer (routes/leads.js).
+export function settle(app) {
+  return Promise.all([...app.locals.pending]);
+}

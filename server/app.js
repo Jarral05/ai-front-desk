@@ -11,22 +11,27 @@ import { getClinic } from './lib/knowledge.js';
 import { activeProfile, useProfile } from './lib/profiles.js';
 import { chatRoutes } from './routes/chat.js';
 import { leadRoutes } from './routes/leads.js';
+import { myLeadRoutes } from './routes/myLead.js';
+import { createNotifier } from './lib/notify.js';
 import { ownerRoutes } from './routes/owner.js';
 
 const DIST = path.join(path.dirname(fileURLToPath(import.meta.url)), '..', 'dist');
 
 export { HttpError };
 
-// `ai`, `owner` and `profile` can be passed in: the tests use a fake AI, a test owner and each
-// profile in turn. Otherwise Gemini is used when a key is set, and the owner account and the
-// profile come from the settings.
+// `ai`, `owner`, `profile` and `notifier` can be passed in: the tests use a fake AI, a test owner,
+// each profile in turn and a fake script. Otherwise Gemini is used when a key is set, and the
+// owner account, the profile and the lead email and sheet come from the settings.
 export function createApp({
   ai = createGeminiAi({ apiKey: config.geminiApiKey, model: config.geminiModel }),
   owner = config.owner,
   profile = config.profile,
+  notifier = createNotifier(config.notify),
 } = {}) {
   useProfile(profile);
   const app = express();
+  // Lead emails and sheet rows still on their way (routes/leads.js). The tests wait for these.
+  app.locals.pending = new Set();
   app.set('trust proxy', config.trustProxy);
   app.disable('x-powered-by');
 
@@ -73,8 +78,9 @@ export function createApp({
     res.type(logo.type).send(logo.bytes);
   });
   api.use('/chat', chatRoutes({ ai }));
-  api.use('/leads', leadRoutes({ ai }));
-  api.use('/owner', ownerRoutes({ owner, secure: config.isProd }));
+  api.use('/leads', leadRoutes({ ai, notifier, secure: config.isProd }));
+  api.use('/my-lead', myLeadRoutes({ secure: config.isProd }));
+  api.use('/owner', ownerRoutes({ owner, secure: config.isProd, notifier }));
 
   api.use(() => {
     throw new HttpError(404, 'Not found');
