@@ -65,8 +65,16 @@ test('the email and the row are built here, safely: no formula can run in the sh
   assert.equal(message.row.length, 12);
   assert.equal(message.row[2], `'=HYPERLINK("http://evil.example","Click")`);
   assert.equal(message.row[10], "'@SUM(A1:A9)");
-  assert.equal(message.row[3], "'+1 555 0100"); // a + start is risky too; it still reads as the number
-  assert.equal(sheetCell('Plain text, "quoted"'), 'Plain text, "quoted"');
+  assert.equal(message.row[3], "'+1 555 0100");
+  // Every cell is text: numbers keep their leading 0, nothing turns into a date or a sum.
+  assert.equal(message.row[0], "'0123456789abcdef01234567");
+  assert.equal(sheetCell('03001234567'), "'03001234567");
+  assert.equal(sheetCell('12345678900'), "'12345678900");
+  assert.equal(sheetCell('1e5'), "'1e5");
+  assert.equal(sheetCell('Plain text, "quoted"'), `'Plain text, "quoted"`);
+  // A name that really starts with ' keeps it: Sheets hides only the first one.
+  assert.equal(sheetCell("'Bob"), "''Bob");
+  assert.equal(sheetCell(''), '');
   assert.equal(sheetCell(null), '');
 });
 

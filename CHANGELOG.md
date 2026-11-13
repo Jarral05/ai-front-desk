@@ -4,6 +4,15 @@ All notable changes to this project are recorded here. The format follows
 [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and versions follow
 [Semantic Versioning](https://semver.org/).
 
+## [0.1.7] - 2026-11-13
+
+### Fixed
+
+- Google Sheet: phone numbers were turned into numbers (seen in the owner's first real run), so a
+  number like 03001234567 would lose its first 0 and a long one could show as 1.2E+10. Every cell is
+  now sent as text with a leading `'`, which Sheets hides; the same `'` already stopped `=1+1`
+  running as a sum in that run.
+
 ## [0.1.6] - 2026-11-12
 
 ### Added

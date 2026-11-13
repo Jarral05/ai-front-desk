@@ -9,14 +9,16 @@
 // in the body; and its answer is "redirected to a one-time URL", so the request must follow redirects.
 import { LIMITS } from '../config.js';
 import { Lead } from '../models.js';
-import { csvCell } from './csv.js';
 
 export { CHANNELS } from './notifySettings.js';
 
-// A spreadsheet cell that can't run as a formula: the same guard as the CSV download, without the
-// CSV quoting. Google Sheets treats a leading ' as "show this as text".
+// Every cell goes in as text, exactly as typed. A leading ' tells Google Sheets "this is text" and
+// isn't shown (proved in the owner's real run, 12 Nov: a lead named =1+1 showed as =1+1, not 2).
+// So a formula can't run, and a phone number like 03001234567 keeps its first 0 instead of
+// becoming the number 3001234567 (the owner's run showed phone numbers turned into numbers).
 export function sheetCell(value) {
-  return csvCell(value).slice(1, -1).replaceAll('""', '"');
+  const text = value == null ? '' : String(value);
+  return text === '' ? '' : `'${text}`;
 }
 
 // One line for an email subject: no line breaks (they could start new headers), at most 120 characters.
