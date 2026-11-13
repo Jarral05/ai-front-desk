@@ -109,6 +109,9 @@ test('production refuses to start without its database, address, AI and owner se
   );
   const { hashPassword } = await import('../server/lib/passwords.js');
   const realHash = await hashPassword('x'.repeat(15));
-  assert.doesNotThrow(() => checkProductionSettings({ ...base, OWNER_PASSWORD_HASH: realHash }));
+  // Google's terms: the live site must be on the paid tier (13 Nov 2026).
+  assert.throws(() => checkProductionSettings({ ...base, OWNER_PASSWORD_HASH: realHash }), /GEMINI_TIER must be "paid" in production/);
+  assert.throws(() => checkProductionSettings({ ...base, OWNER_PASSWORD_HASH: realHash, GEMINI_TIER: 'free' }), /GEMINI_TIER must be "paid"/);
+  assert.doesNotThrow(() => checkProductionSettings({ ...base, OWNER_PASSWORD_HASH: realHash, GEMINI_TIER: 'paid' }));
   assert.doesNotThrow(() => checkProductionSettings({ NODE_ENV: 'development' }));
 });

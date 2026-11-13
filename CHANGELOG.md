@@ -4,6 +4,18 @@ All notable changes to this project are recorded here. The format follows
 [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and versions follow
 [Semantic Versioning](https://semver.org/).
 
+## [0.1.8] - 2026-11-13
+
+### Added
+
+- `GEMINI_TIER` (`free` or `paid`, default `free`). **Production refuses to start unless it is
+  `paid`**: Google's Gemini terms (effective 23 March 2026) allow only the paid tier for an app open
+  to users in the EEA, Switzerland or the UK, and the live demo is for UK and EU buyers.
+- The chat's notice follows the tier. On the paid tier it no longer says Google may use messages to
+  improve its products, because on that tier Google states it doesn't.
+- `AI_CALLS_PER_DAY` (1 to 300, default 300): the whole app's daily AI limit, the hard stop on the
+  Gemini bill. The live demo uses 100. A wrong value stops the app at startup.
+
 ## [0.1.7] - 2026-11-13
 
 ### Fixed

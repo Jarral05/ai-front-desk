@@ -5,7 +5,7 @@ import express from 'express';
 import { z } from 'zod';
 import { LIMITS } from '../config.js';
 import { HttpError } from '../errors.js';
-import { AI_NOTICE } from '../lib/clinic.js';
+import { aiNotice } from '../lib/clinic.js';
 import { bump, windows } from '../lib/counters.js';
 import { getClinic, knownChars, removePdf, resetToDemo, saveFacts, savePdf } from '../lib/knowledge.js';
 import { readPdfText } from '../lib/pdf.js';
@@ -49,14 +49,14 @@ function fieldsFrom(issues) {
 }
 
 // What the Knowledge page shows, including the PDF's text exactly as the assistant reads it.
-async function view() {
+async function view(tier) {
   const clinic = await getClinic();
   return {
     services: clinic.services.map(({ name, minutes, price }) => ({ name, minutes, price })),
     hours: [...clinic.hours],
     facts: [...clinic.facts],
     greeting: clinic.greeting,
-    notice: AI_NOTICE,
+    notice: aiNotice(tier),
     currency: clinic.currency.symbol.trim(),
     pdf: clinic.pdf
       ? { name: clinic.pdf.name, pages: clinic.pdf.pages, chars: clinic.pdf.text.length, uploadedAt: clinic.pdf.uploadedAt, text: clinic.pdf.text }
@@ -97,16 +97,16 @@ async function uploadLimit(_req, _res, next) {
   next();
 }
 
-export function knowledgeRoutes() {
+export function knowledgeRoutes({ tier = 'free' } = {}) {
   const router = express.Router();
 
-  router.get('/', async (_req, res) => res.json(await view()));
+  router.get('/', async (_req, res) => res.json(await view(tier)));
 
   router.put('/', async (req, res) => {
     const parsed = KnowledgeInput.safeParse(req.body ?? {});
     if (!parsed.success) throw new HttpError(400, 'Please check the highlighted boxes.', fieldsFrom(parsed.error.issues));
     await saveFacts(parsed.data);
-    res.json(await view());
+    res.json(await view(tier));
   });
 
   router.post('/pdf', uploadLimit, pdfBody, async (req, res) => {
@@ -120,17 +120,17 @@ export function knowledgeRoutes() {
         + 'try a PDF saved from a document instead.');
     }
     await savePdf({ name, pages, text });
-    res.status(201).json(await view());
+    res.status(201).json(await view(tier));
   });
 
   router.delete('/pdf', async (_req, res) => {
     await removePdf();
-    res.json(await view());
+    res.json(await view(tier));
   });
 
   router.post('/reset', async (_req, res) => {
     await resetToDemo();
-    res.json(await view());
+    res.json(await view(tier));
   });
 
   return router;

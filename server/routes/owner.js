@@ -40,7 +40,7 @@ function findLeads(query) {
   return Lead.find(filter).sort({ createdAt: -1 }).limit(LIMITS.dashboardLeads).lean();
 }
 
-export function ownerRoutes({ owner, secure, notifier = null }) {
+export function ownerRoutes({ owner, secure, notifier = null, tier = 'free' }) {
   const router = express.Router();
   const cookie = ownerCookie(secure);
   const { maxAge: _lifetime, ...clearOptions } = cookie.options; // clearing a cookie takes no lifetime
@@ -185,7 +185,7 @@ export function ownerRoutes({ owner, secure, notifier = null }) {
     res.json({ count: deletedCount });
   });
 
-  router.use('/knowledge', knowledgeRoutes());
+  router.use('/knowledge', knowledgeRoutes({ tier }));
 
   return router;
 }

@@ -5,6 +5,27 @@ import { loadProfile } from './lib/profiles.js';
 
 const isProd = process.env.NODE_ENV === 'production';
 
+// Which Gemini tier the key's project is on. Google's terms (13 Nov 2026): an app open to users in
+// the EEA, Switzerland or the UK may use only the paid tier, so the live site must say "paid".
+export function geminiTier(env = process.env) {
+  const tier = (env.GEMINI_TIER || 'free').trim().toLowerCase();
+  if (!['free', 'paid'].includes(tier)) throw new Error(`GEMINI_TIER can be "free" or "paid", not "${env.GEMINI_TIER}".`);
+  return tier;
+}
+
+// The whole app's AI calls a day: the hard stop that caps the Gemini bill. 300 unless set lower;
+// the live demo uses 100 (owner's decision, 13 Nov 2026).
+export const MAX_AI_CALLS_PER_DAY = 300;
+export function dailyAiLimit(env = process.env) {
+  const raw = (env.AI_CALLS_PER_DAY ?? '').trim();
+  if (raw === '') return MAX_AI_CALLS_PER_DAY;
+  const value = Number(raw);
+  if (!Number.isInteger(value) || value < 1 || value > MAX_AI_CALLS_PER_DAY) {
+    throw new Error(`AI_CALLS_PER_DAY must be a whole number from 1 to ${MAX_AI_CALLS_PER_DAY}, not "${raw}".`);
+  }
+  return value;
+}
+
 // Stop at startup, with a clear message, rather than fail later on a visitor's request.
 export function checkProductionSettings(env = process.env) {
   if (env.NODE_ENV !== 'production') return;
@@ -13,6 +34,10 @@ export function checkProductionSettings(env = process.env) {
   }
   if (!isPasswordHash(env.OWNER_PASSWORD_HASH)) {
     throw new Error('OWNER_PASSWORD_HASH must be a hash made with "npm run hash-password".');
+  }
+  if (geminiTier(env) !== 'paid') {
+    throw new Error('GEMINI_TIER must be "paid" in production: Google\'s terms allow only the paid tier '
+      + 'for an app open to users in the EEA, Switzerland or the UK.');
   }
 }
 
@@ -28,6 +53,7 @@ export const config = {
   geminiApiKey: process.env.GEMINI_API_KEY || '',
   // gemini-3.5-flash-lite has the highest free per-minute limit (decision 0002).
   geminiModel: process.env.GEMINI_MODEL || 'gemini-3.5-flash-lite',
+  geminiTier: geminiTier(),
   // Which business this copy shows (lib/profiles.js). A wrong name or a broken profile file
   // stops the app here, at startup, with a clear message.
   profile: loadProfile(),
@@ -49,7 +75,7 @@ export const LIMITS = Object.freeze({
   messagesPerVisitorHour: 30,
   leadsPerVisitorHour: 5,
   aiCallsPerMinute: 12,
-  aiCallsPerDay: 300,
+  aiCallsPerDay: dailyAiLimit(),
   aiTimeoutMs: 15000,
   // Conversations and leads delete themselves after this long (a MongoDB TTL index).
   keepHours: 24,

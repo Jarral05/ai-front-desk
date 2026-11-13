@@ -5,9 +5,15 @@ import { CLINIC_SAMPLES } from './samples.js';
 // "reset to demo facts" copy. The name, tagline and "Try asking" questions aren't editable.
 
 // Always added after the owner's welcome, so an edit can never remove the AI and demo notice.
+// Two versions, because Google's free and paid tiers treat messages differently (Gemini API terms,
+// read 13 Nov 2026): on the free tier Google may use them to improve its products; on the paid tier
+// it doesn't. GEMINI_TIER in the settings says which one this copy uses (config.js).
 export const AI_NOTICE = "I'm an AI assistant, not a person. This is a demo, so please use made-up "
   + "details. Messages are sent to Google's Gemini AI, and Google may use them to improve its "
   + 'products.';
+export const AI_NOTICE_PAID = "I'm an AI assistant, not a person. This is a demo, so please use made-up "
+  + "details. Messages are sent to Google's Gemini AI to write the answers.";
+export const aiNotice = (tier = 'free') => (tier === 'paid' ? AI_NOTICE_PAID : AI_NOTICE);
 
 export const DEMO_CLINIC = Object.freeze({
   // The profile parts (lib/profiles.js): the words and settings that differ from one kind of
@@ -68,14 +74,14 @@ export const DEMO_CLINIC = Object.freeze({
 });
 
 // What the public page needs. A copy, so a caller can't change the demo facts.
-export function publicClinic(clinic = DEMO_CLINIC) {
+export function publicClinic(clinic = DEMO_CLINIC, tier = 'free') {
   return {
     name: clinic.name,
     tagline: clinic.tagline,
     services: clinic.services.map((service) => ({ ...service })),
     hours: [...clinic.hours],
     facts: [...clinic.facts],
-    greeting: `${clinic.greeting} ${AI_NOTICE}`,
+    greeting: `${clinic.greeting} ${aiNotice(tier)}`,
     tryAsking: [...clinic.tryAsking],
     place: clinic.place,
     currency: clinic.currency.symbol,

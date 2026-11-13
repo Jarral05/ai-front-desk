@@ -27,6 +27,7 @@ export function createApp({
   owner = config.owner,
   profile = config.profile,
   notifier = createNotifier(config.notify),
+  tier = config.geminiTier,
 } = {}) {
   useProfile(profile);
   const app = express();
@@ -70,7 +71,7 @@ export function createApp({
 
   api.get('/health', (_req, res) => res.json({ ok: true }));
   // The owner's facts if they've edited them, else the demo facts. Never the PDF's text.
-  api.get('/clinic', async (_req, res) => res.json(publicClinic(await getClinic())));
+  api.get('/clinic', async (_req, res) => res.json(publicClinic(await getClinic(), tier)));
   // A private profile's logo, checked when the app started (lib/profiles.js).
   api.get('/logo', (_req, res) => {
     const { logo } = activeProfile();
@@ -80,7 +81,7 @@ export function createApp({
   api.use('/chat', chatRoutes({ ai }));
   api.use('/leads', leadRoutes({ ai, notifier, secure: config.isProd }));
   api.use('/my-lead', myLeadRoutes({ secure: config.isProd }));
-  api.use('/owner', ownerRoutes({ owner, secure: config.isProd, notifier }));
+  api.use('/owner', ownerRoutes({ owner, secure: config.isProd, notifier, tier }));
 
   api.use(() => {
     throw new HttpError(404, 'Not found');

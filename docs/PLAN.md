@@ -65,9 +65,9 @@ part of that day moves to the next day; nothing is skipped.
   "Not sent" with a working Retry.
   **Built 12 Nov (0.1.6):** 123 tests, 12 protections broken on purpose and caught, a phone-width
   check with a stand-in script (15/15). **Owner's real Google run, 13 Nov:** checks 1 to 3 passed
-  (email and row arrive, "sent" on the dashboard, `=1+1` shown as text). Check 4 showed "Not sent"
-  with Retry; Retry turning it to "sent" with one row is still to be confirmed. Phone numbers became
-  numbers: fixed in 0.1.7.
+  (email and row arrive, "sent" on the dashboard, `=1+1` shown as text). Check 4 passed too: a wrong secret
+  gave "Not sent" twice, and Retry turned both to "sent" (owner, 13 Nov). Phone numbers became numbers:
+  fixed in 0.1.7. **Part 6 done 13 Nov.**
 
 ## Part 7: Security and AI quality check
 
